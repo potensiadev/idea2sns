@@ -1,17 +1,19 @@
 import { Sparkles, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import UserMenu from "./UserMenu";
 
 export const Hero = () => {
   return (
     <section className="text-center py-16 md:py-24 relative">
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
         <Link to="/connections">
           <Button variant="outline" size="sm" className="gap-2">
             <Settings className="w-4 h-4" />
-            Manage Connections
+            연결 관리
           </Button>
         </Link>
+        <UserMenu />
       </div>
 
       <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
