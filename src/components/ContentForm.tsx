@@ -106,8 +106,7 @@ export const ContentForm = ({ onGenerate, isGenerating }: ContentFormProps) => {
               {PLATFORMS.map((platform) => (
                 <div
                   key={platform.id}
-                  className="flex items-center space-x-2 p-3 rounded-lg border hover:border-primary/50 transition-colors cursor-pointer"
-                  onClick={() => togglePlatform(platform.id)}
+                  className="flex items-center space-x-2 p-3 rounded-lg border hover:border-primary/50 transition-colors"
                 >
                   <Checkbox
                     id={platform.id}
@@ -116,7 +115,7 @@ export const ContentForm = ({ onGenerate, isGenerating }: ContentFormProps) => {
                   />
                   <Label
                     htmlFor={platform.id}
-                    className="cursor-pointer font-medium text-sm"
+                    className="cursor-pointer font-medium text-sm flex-1"
                   >
                     {platform.label}
                   </Label>
