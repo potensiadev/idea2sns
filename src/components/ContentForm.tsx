@@ -1,0 +1,150 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2, Sparkles } from "lucide-react";
+
+interface ContentFormProps {
+  onGenerate: (topic: string, content: string, tone: string, platforms: string[]) => void;
+  isGenerating: boolean;
+}
+
+const PLATFORMS = [
+  { id: "reddit", label: "Reddit", color: "platform-reddit" },
+  { id: "threads", label: "Threads", color: "platform-threads" },
+  { id: "instagram", label: "Instagram", color: "platform-instagram" },
+  { id: "twitter", label: "Twitter (X)", color: "platform-twitter" },
+  { id: "pinterest", label: "Pinterest", color: "platform-pinterest" },
+];
+
+const TONES = [
+  { value: "professional", label: "Professional" },
+  { value: "casual", label: "Casual & Friendly" },
+  { value: "humorous", label: "Humorous" },
+  { value: "inspirational", label: "Inspirational" },
+  { value: "educational", label: "Educational" },
+];
+
+export const ContentForm = ({ onGenerate, isGenerating }: ContentFormProps) => {
+  const [topic, setTopic] = useState("");
+  const [content, setContent] = useState("");
+  const [tone, setTone] = useState("professional");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
+    PLATFORMS.map((p) => p.id)
+  );
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onGenerate(topic, content, tone, selectedPlatforms);
+  };
+
+  const togglePlatform = (platformId: string) => {
+    setSelectedPlatforms((prev) =>
+      prev.includes(platformId)
+        ? prev.filter((id) => id !== platformId)
+        : [...prev, platformId]
+    );
+  };
+
+  return (
+    <Card className="shadow-lg mb-12 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
+      <CardContent className="pt-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="topic">Content Topic</Label>
+            <Input
+              id="topic"
+              placeholder="e.g., Launch of our new AI product"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              required
+              className="h-12"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="content">Main Content</Label>
+            <Textarea
+              id="content"
+              placeholder="Describe the key points you want to share..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              required
+              className="min-h-32 resize-none"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tone">Tone & Style</Label>
+            <Select value={tone} onValueChange={setTone}>
+              <SelectTrigger id="tone" className="h-12">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TONES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Select Platforms</Label>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {PLATFORMS.map((platform) => (
+                <div
+                  key={platform.id}
+                  className="flex items-center space-x-2 p-3 rounded-lg border hover:border-primary/50 transition-colors cursor-pointer"
+                  onClick={() => togglePlatform(platform.id)}
+                >
+                  <Checkbox
+                    id={platform.id}
+                    checked={selectedPlatforms.includes(platform.id)}
+                    onCheckedChange={() => togglePlatform(platform.id)}
+                  />
+                  <Label
+                    htmlFor={platform.id}
+                    className="cursor-pointer font-medium text-sm"
+                  >
+                    {platform.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <Button
+            type="submit"
+            size="lg"
+            disabled={isGenerating}
+            className="w-full h-14 text-lg font-semibold bg-gradient-primary hover:opacity-90 transition-opacity shadow-glow"
+          >
+            {isGenerating ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Generating Amazing Content...
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-2 h-5 w-5" />
+                Generate Posts
+              </>
+            )}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+};
