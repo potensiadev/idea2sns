@@ -83,7 +83,14 @@ const Index = () => {
       toast.success("Content generated successfully!");
     } catch (error: any) {
       console.error("Error generating content:", error);
-      if (error.status === 429) {
+      if (error.status === 401) {
+        toast.error("로그인이 필요합니다. 로그인 또는 회원가입을 해주세요.", {
+          action: {
+            label: "로그인하기",
+            onClick: () => window.location.href = "/auth",
+          },
+        });
+      } else if (error.status === 429) {
         toast.error("Rate limit exceeded. Please try again in a moment.");
       } else if (error.status === 402) {
         toast.error("AI credits depleted. Please add credits to continue.");
@@ -118,7 +125,14 @@ const Index = () => {
       toast.success("Blog content analyzed and posts generated successfully!");
     } catch (error: any) {
       console.error("Error generating content:", error);
-      if (error.status === 429) {
+      if (error.status === 401) {
+        toast.error("로그인이 필요합니다. 로그인 또는 회원가입을 해주세요.", {
+          action: {
+            label: "로그인하기",
+            onClick: () => window.location.href = "/auth",
+          },
+        });
+      } else if (error.status === 429) {
         toast.error("Rate limit exceeded. Please try again in a moment.");
       } else if (error.status === 402) {
         toast.error("AI credits depleted. Please add credits to continue.");

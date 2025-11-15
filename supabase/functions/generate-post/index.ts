@@ -46,7 +46,7 @@ const PLATFORM_PROMPTS = {
 - Can include 1-2 relevant hashtags
 - Optional: Add a subtle CTA or question
 - Make every word count`,
-  
+
   instagram: `Create an Instagram caption that:
 - Starts with a hook to grab attention
 - Tells a mini-story or shares valuable insight
@@ -86,23 +86,32 @@ serve(async (req) => {
   }
 
   try {
-    // Optional authentication check (for logging purposes)
+    // Required authentication check
     const authHeader = req.headers.get("Authorization");
-    let userId = "anonymous";
 
-    if (authHeader) {
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-        { global: { headers: { Authorization: authHeader } } }
+    if (!authHeader) {
+      return jsonResponse(
+        { error: "Unauthorized. Please log in to generate content." },
+        401
       );
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        userId = user.id;
-      }
     }
 
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return jsonResponse(
+        { error: "Unauthorized. Invalid or expired authentication token." },
+        401
+      );
+    }
+
+    const userId = user.id;
     console.log(`Generate post request from user: ${userId}`);
 
     // Validate input
@@ -214,7 +223,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
           return jsonResponse({ error: result.error }, result.status);
         }
 
-      posts[platform] = result.content || "";
+        posts[platform] = result.content;
       }
     } else {
       // Blog analysis and conversion logic
@@ -257,7 +266,7 @@ Provide a structured summary in JSON format:
 
       let blogSummary;
       try {
-        blogSummary = JSON.parse(analysisResult.content || "{}");
+        blogSummary = JSON.parse(analysisResult.content);
       } catch (e) {
         // If JSON parsing fails, create a simple summary
         console.error("Failed to parse blog analysis, using fallback");
@@ -299,7 +308,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
           return jsonResponse({ error: result.error }, result.status);
         }
 
-        posts[platform] = result.content || "";
+        posts[platform] = result.content;
       }
     }
 
