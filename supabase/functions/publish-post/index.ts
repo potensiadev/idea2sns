@@ -15,7 +15,7 @@ interface PublishRequest {
 }
 
 const publishRequestSchema = z.object({
-  platform: z.enum(['twitter']),
+  platform: z.enum(['twitter', 'instagram', 'reddit', 'threads', 'pinterest']),
   content: z.string().min(1).max(10000),
   accountId: z.string().uuid(),
 });

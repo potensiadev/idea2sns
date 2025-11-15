@@ -13,7 +13,13 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft, Plus, Trash2, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
 
-const PLATFORMS = [{ id: "twitter", name: "X (Twitter)", icon: "🐦" }];
+const PLATFORMS = [
+  { id: "twitter", name: "X (Twitter)", icon: "🐦" },
+  { id: "instagram", name: "Instagram", icon: "📷" },
+  { id: "reddit", name: "Reddit", icon: "🤖" },
+  { id: "threads", name: "Threads", icon: "🧵" },
+  { id: "pinterest", name: "Pinterest", icon: "📌" }
+];
 
 type SocialAccount = Tables<"social_accounts">;
 
@@ -26,7 +32,7 @@ type FormState = {
 };
 
 const tokenSchema = z.object({
-  platform: z.enum(["twitter"], {
+  platform: z.enum(["twitter", "instagram", "reddit", "threads", "pinterest"], {
     required_error: "플랫폼을 선택하세요",
   }),
   account_name: z.string().max(100, "계정 이름은 100자 이하여야 합니다").optional().or(z.literal("")),

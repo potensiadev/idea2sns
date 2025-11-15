@@ -182,7 +182,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
           return jsonResponse({ error: result.error }, result.status);
         }
 
-        posts[platform] = result.content;
+      posts[platform] = result.content || "";
       }
     } else {
       // Blog analysis and conversion logic
@@ -225,7 +225,7 @@ Provide a structured summary in JSON format:
 
       let blogSummary;
       try {
-        blogSummary = JSON.parse(analysisResult.content);
+        blogSummary = JSON.parse(analysisResult.content || "{}");
       } catch (e) {
         // If JSON parsing fails, create a simple summary
         console.error("Failed to parse blog analysis, using fallback");
@@ -267,7 +267,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
           return jsonResponse({ error: result.error }, result.status);
         }
 
-        posts[platform] = result.content;
+        posts[platform] = result.content || "";
       }
     }
 
