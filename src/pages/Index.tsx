@@ -33,7 +33,7 @@ const Index = () => {
 
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-posts", {
+      const { data, error } = await supabase.functions.invoke("generate-post", {
         body: { type: "simple", topic, content, tone, platforms },
       });
 
@@ -67,7 +67,7 @@ const Index = () => {
 
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-posts", {
+      const { data, error } = await supabase.functions.invoke("generate-post", {
         body: { type: "blog", blogContent, keyMessage, platforms },
       });
 
