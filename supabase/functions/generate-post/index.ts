@@ -54,28 +54,24 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authentication
+    // Optional authentication check (for logging purposes)
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return jsonResponse(
-        { error: "Missing authorization header" },
-        401
+    let userId = "anonymous";
+
+    if (authHeader) {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_ANON_KEY") ?? "",
+        { global: { headers: { Authorization: authHeader } } }
       );
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        userId = user.id;
+      }
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return jsonResponse(
-        { error: "Invalid or expired authentication token" },
-        403
-      );
-    }
+    console.log(`Generate post request from user: ${userId}`);
 
     // Validate input
     const requestBody = await req.json();
