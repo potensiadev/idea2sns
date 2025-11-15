@@ -3,6 +3,7 @@ import { Hero } from "@/components/Hero";
 import { ContentForm } from "@/components/ContentForm";
 import { BlogContentForm } from "@/components/BlogContentForm";
 import { ResultCards } from "@/components/ResultCards";
+import { AuthModal } from "@/components/AuthModal";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,14 +32,20 @@ interface GenerateFunctionResponse {
 
 const GENERATE_FUNCTION_CANDIDATES = ["generate-post"] as const;
 
-const invokeGenerateFunction = async (payload: GenerateFunctionPayload) => {
+const invokeGenerateFunction = async (
+  payload: GenerateFunctionPayload,
+  onAuthRequired?: () => void
+) => {
   let lastError: any = null;
 
   // Get current session to ensure auth token is available
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
-    throw new Error("No active session. Please log in again.");
+    if (onAuthRequired) {
+      onAuthRequired();
+    }
+    throw new Error("AUTH_REQUIRED");
   }
 
   console.log("Auth token present:", !!session.access_token);
@@ -73,6 +80,7 @@ const invokeGenerateFunction = async (payload: GenerateFunctionPayload) => {
 const Index = () => {
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const handleGenerate = async (
     topic: string,
@@ -87,26 +95,22 @@ const Index = () => {
 
     setIsGenerating(true);
     try {
-      const data = await invokeGenerateFunction({ type: "simple", topic, content, tone, platforms });
+      const data = await invokeGenerateFunction(
+        { type: "simple", topic, content, tone, platforms },
+        () => setShowAuthModal(true)
+      );
 
       setGeneratedContent(data.posts);
       toast.success("Content generated successfully!");
     } catch (error: any) {
       console.error("Error generating content:", error);
-      if (error.message?.includes("No active session")) {
-        toast.error("세션이 만료되었습니다. 다시 로그인해주세요.", {
-          action: {
-            label: "로그인하기",
-            onClick: () => window.location.href = "/auth",
-          },
-        });
+      if (error.message === "AUTH_REQUIRED") {
+        // Auth modal already shown, do nothing
+        return;
+      } else if (error.message?.includes("No active session")) {
+        setShowAuthModal(true);
       } else if (error.status === 401) {
-        toast.error("로그인이 필요합니다. 로그인 또는 회원가입을 해주세요.", {
-          action: {
-            label: "로그인하기",
-            onClick: () => window.location.href = "/auth",
-          },
-        });
+        setShowAuthModal(true);
       } else if (error.status === 429) {
         toast.error("Rate limit exceeded. Please try again in a moment.");
       } else if (error.status === 402) {
@@ -131,31 +135,27 @@ const Index = () => {
 
     setIsGenerating(true);
     try {
-      const data = await invokeGenerateFunction({
-        type: "blog",
-        blogContent,
-        keyMessage,
-        platforms,
-      });
+      const data = await invokeGenerateFunction(
+        {
+          type: "blog",
+          blogContent,
+          keyMessage,
+          platforms,
+        },
+        () => setShowAuthModal(true)
+      );
 
       setGeneratedContent(data.posts);
       toast.success("Blog content analyzed and posts generated successfully!");
     } catch (error: any) {
       console.error("Error generating content:", error);
-      if (error.message?.includes("No active session")) {
-        toast.error("세션이 만료되었습니다. 다시 로그인해주세요.", {
-          action: {
-            label: "로그인하기",
-            onClick: () => window.location.href = "/auth",
-          },
-        });
+      if (error.message === "AUTH_REQUIRED") {
+        // Auth modal already shown, do nothing
+        return;
+      } else if (error.message?.includes("No active session")) {
+        setShowAuthModal(true);
       } else if (error.status === 401) {
-        toast.error("로그인이 필요합니다. 로그인 또는 회원가입을 해주세요.", {
-          action: {
-            label: "로그인하기",
-            onClick: () => window.location.href = "/auth",
-          },
-        });
+        setShowAuthModal(true);
       } else if (error.status === 429) {
         toast.error("Rate limit exceeded. Please try again in a moment.");
       } else if (error.status === 402) {
@@ -196,6 +196,15 @@ const Index = () => {
 
         {generatedContent && <ResultCards content={generatedContent} />}
       </div>
+
+      <AuthModal
+        open={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        onSuccess={() => {
+          // Optionally retry the generation after successful login
+          toast.success("로그인 성공! 다시 시도해주세요.");
+        }}
+      />
     </div>
   );
 };
