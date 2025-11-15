@@ -22,6 +22,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [showResendEmail, setShowResendEmail] = useState(false);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -72,7 +73,9 @@ const Auth = () => {
         return;
       }
 
-      toast.success("회원가입이 완료되었습니다!");
+      toast.success("회원가입이 완료되었습니다! 이메일을 확인하여 인증을 완료해주세요.", {
+        duration: 8000,
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -84,9 +87,37 @@ const Auth = () => {
     }
   };
 
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast.error("이메일 주소를 입력해주세요");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("인증 이메일이 재발송되었습니다. 메일함을 확인해주세요.", {
+          duration: 6000,
+        });
+        setShowResendEmail(false);
+      }
+    } catch (error) {
+      toast.error("이메일 재발송 중 오류가 발생했습니다");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       const validated = authSchema.parse({ email, password });
       setIsLoading(true);
@@ -98,7 +129,15 @@ const Auth = () => {
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          toast.error("이메일 또는 비밀번호가 올바르지 않습니다");
+          toast.error("이메일 또는 비밀번호가 올바르지 않습니다. 회원가입 후 이메일 인증을 완료하셨나요?", {
+            duration: 6000,
+          });
+          setShowResendEmail(true);
+        } else if (error.message.includes("Email not confirmed")) {
+          toast.error("이메일 인증이 필요합니다. 받은 메일함을 확인해주세요.", {
+            duration: 6000,
+          });
+          setShowResendEmail(true);
         } else {
           toast.error(error.message);
         }
@@ -106,6 +145,7 @@ const Auth = () => {
       }
 
       toast.success("로그인되었습니다!");
+      setShowResendEmail(false);
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -199,6 +239,23 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "로그인 중..." : "로그인"}
                   </Button>
+
+                  {showResendEmail && (
+                    <div className="mt-4 p-4 bg-muted rounded-lg space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        이메일 인증을 완료하지 않으셨나요?
+                      </p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleResendConfirmation}
+                        disabled={isLoading}
+                      >
+                        인증 이메일 다시 받기
+                      </Button>
+                    </div>
+                  )}
                 </form>
               </TabsContent>
 

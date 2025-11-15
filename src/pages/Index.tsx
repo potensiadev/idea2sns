@@ -34,6 +34,15 @@ const GENERATE_FUNCTION_CANDIDATES = ["generate-post"] as const;
 const invokeGenerateFunction = async (payload: GenerateFunctionPayload) => {
   let lastError: any = null;
 
+  // Get current session to ensure auth token is available
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("No active session. Please log in again.");
+  }
+
+  console.log("Auth token present:", !!session.access_token);
+
   for (const functionName of GENERATE_FUNCTION_CANDIDATES) {
     const { data, error } = await supabase.functions.invoke<GenerateFunctionResponse>(
       functionName,
@@ -50,6 +59,7 @@ const invokeGenerateFunction = async (payload: GenerateFunctionPayload) => {
     }
 
     lastError = error;
+    console.error("Function invocation error:", error);
 
     const isMissingFunction = error?.status === 404 || /not found/i.test(error?.message || "");
     if (!isMissingFunction) {
@@ -83,7 +93,14 @@ const Index = () => {
       toast.success("Content generated successfully!");
     } catch (error: any) {
       console.error("Error generating content:", error);
-      if (error.status === 401) {
+      if (error.message?.includes("No active session")) {
+        toast.error("세션이 만료되었습니다. 다시 로그인해주세요.", {
+          action: {
+            label: "로그인하기",
+            onClick: () => window.location.href = "/auth",
+          },
+        });
+      } else if (error.status === 401) {
         toast.error("로그인이 필요합니다. 로그인 또는 회원가입을 해주세요.", {
           action: {
             label: "로그인하기",
@@ -125,7 +142,14 @@ const Index = () => {
       toast.success("Blog content analyzed and posts generated successfully!");
     } catch (error: any) {
       console.error("Error generating content:", error);
-      if (error.status === 401) {
+      if (error.message?.includes("No active session")) {
+        toast.error("세션이 만료되었습니다. 다시 로그인해주세요.", {
+          action: {
+            label: "로그인하기",
+            onClick: () => window.location.href = "/auth",
+          },
+        });
+      } else if (error.status === 401) {
         toast.error("로그인이 필요합니다. 로그인 또는 회원가입을 해주세요.", {
           action: {
             label: "로그인하기",
