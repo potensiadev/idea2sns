@@ -132,28 +132,19 @@ export const ContentForm = ({ onGenerate, isGenerating }: ContentFormProps) => {
             <Label>Select Platforms</Label>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {PLATFORMS.map((platform) => (
-                <div
+                <button
                   key={platform.id}
-                  className={`flex items-center space-x-2 p-3 rounded-lg border-2 transition-all ${
+                  type="button"
+                  onClick={() => togglePlatform(platform.id)}
+                  disabled={isFormDisabled}
+                  className={`p-3 rounded-lg border-2 transition-all text-center font-medium text-sm ${
                     selectedPlatforms.includes(platform.id)
                       ? `border-${platform.color} bg-${platform.color}/10 shadow-md`
                       : 'border-border hover:border-muted-foreground/30'
-                  }`}
+                  } ${isFormDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-105'}`}
                 >
-                  <Checkbox
-                    id={platform.id}
-                    checked={selectedPlatforms.includes(platform.id)}
-                    onCheckedChange={() => togglePlatform(platform.id)}
-                    disabled={isFormDisabled}
-                    className={selectedPlatforms.includes(platform.id) ? `data-[state=checked]:bg-${platform.color} data-[state=checked]:border-${platform.color}` : ''}
-                  />
-                  <Label
-                    htmlFor={platform.id}
-                    className="cursor-pointer font-medium text-sm flex-1"
-                  >
-                    {platform.label}
-                  </Label>
-                </div>
+                  {platform.label}
+                </button>
               ))}
             </div>
           </div>
