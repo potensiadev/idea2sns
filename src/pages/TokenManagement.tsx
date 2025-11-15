@@ -109,12 +109,29 @@ const TokenManagement = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Encrypt tokens before saving
+      const { data: encryptionData, error: encryptionError } = await supabase
+        .functions.invoke("encrypt-token", {
+          body: {
+            access_token: formData.access_token,
+            refresh_token: formData.refresh_token || null,
+          },
+        });
+
+      if (encryptionError) {
+        throw encryptionError;
+      }
+
+      if (!encryptionData?.success || !encryptionData.encrypted_access_token) {
+        throw new Error("토큰 암호화에 실패했습니다");
+      }
+
       const payload = {
         user_id: user.id,
         platform: formData.platform,
         account_name: formData.account_name || null,
-        access_token: formData.access_token,
-        refresh_token: formData.refresh_token || null,
+        access_token: encryptionData.encrypted_access_token,
+        refresh_token: encryptionData.encrypted_refresh_token || null,
       };
 
       if (editingAccount) {

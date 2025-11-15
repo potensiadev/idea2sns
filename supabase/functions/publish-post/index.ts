@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { decryptSecret } from "../_shared/encryption.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -58,7 +59,7 @@ serve(async (req) => {
     // Fetch the account with tokens
     const { data: account, error: accountError } = await supabase
       .from("social_accounts")
-      .select("access_token, refresh_token, platform")
+      .select("access_token, refresh_token, platform, token_expires_at")
       .eq("id", accountId)
       .eq("user_id", user.id)
       .single();
@@ -67,22 +68,39 @@ serve(async (req) => {
       throw new Error("Account not found or unauthorized");
     }
 
+    // Check if token is expired
+    if (account.token_expires_at) {
+      const expiresAt = new Date(account.token_expires_at);
+      if (expiresAt.getTime() <= Date.now()) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "The saved token expired. Please refresh your credentials.",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+    // Decrypt the access token (with fallback for legacy plaintext tokens)
+    const decryptedAccessToken = await decryptWithFallback(account.access_token);
+
     let result;
     switch (platform) {
       case "twitter":
-        result = await publishToTwitter(content, account.access_token);
+        result = await publishToTwitter(content, decryptedAccessToken);
         break;
       case "reddit":
-        result = await publishToReddit(content, account.access_token);
+        result = await publishToReddit(content, decryptedAccessToken);
         break;
       case "threads":
-        result = await publishToThreads(content, account.access_token);
+        result = await publishToThreads(content, decryptedAccessToken);
         break;
       case "instagram":
-        result = await publishToInstagram(content, account.access_token);
+        result = await publishToInstagram(content, decryptedAccessToken);
         break;
       case "pinterest":
-        result = await publishToPinterest(content, account.access_token);
+        result = await publishToPinterest(content, decryptedAccessToken);
         break;
       default:
         throw new Error(`Unsupported platform: ${platform}`);
@@ -179,4 +197,13 @@ async function publishToInstagram(content: string, accessToken: string) {
 async function publishToPinterest(content: string, accessToken: string) {
   // Pinterest requires image URL and board_id
   throw new Error("Pinterest posting requires additional configuration (image URL and board selection)");
+}
+
+async function decryptWithFallback(encryptedValue: string): Promise<string> {
+  try {
+    return await decryptSecret(encryptedValue);
+  } catch (error) {
+    console.warn("Falling back to raw token because decrypt failed", error);
+    return encryptedValue;
+  }
 }

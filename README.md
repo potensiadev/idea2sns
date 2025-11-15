@@ -71,3 +71,40 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## Security Configuration
+
+Token encryption is enabled for all social media credentials. Set the following environment variables before deploying Supabase Edge Functions:
+
+| Variable | Description |
+| --- | --- |
+| `ENCRYPTION_KEY` | Base64-encoded 32-byte value used for AES-256-GCM encryption. Generate with `openssl rand -base64 32`. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Required only when invoking the `decrypt-token` function from trusted back-end services. |
+
+Without these values the encryption helper will fail fast and tokens will not be stored.
+
+### How to set up encryption:
+
+1. Generate an encryption key:
+   ```sh
+   openssl rand -base64 32
+   ```
+
+2. Add the key to your Supabase Edge Function secrets:
+   - Go to your Supabase project dashboard
+   - Navigate to Edge Functions → Settings
+   - Add a new secret named `ENCRYPTION_KEY` with the generated value
+   - Add your `SUPABASE_SERVICE_ROLE_KEY` (found in Project Settings → API)
+
+3. Deploy the Edge Functions:
+   - `encrypt-token`: Encrypts tokens before storage (user-facing)
+   - `decrypt-token`: Decrypts tokens (service-role protected)
+   - `publish-post`: Updated to decrypt tokens before use
+
+### Security Features:
+
+- **AES-256-GCM encryption** for all social media access tokens
+- **Server-side decryption** only for trusted backend flows
+- **Fallback support** for legacy plaintext tokens during migration
+- **Token expiration checks** to prevent use of expired credentials
+- **Row-level security policies** for data access control

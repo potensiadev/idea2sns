@@ -16,6 +16,56 @@ export interface GeneratedContent {
   pinterest: string;
 }
 
+type GenerateFunctionPayload =
+  | {
+      type: "simple";
+      topic: string;
+      content: string;
+      tone: string;
+      platforms: string[];
+    }
+  | {
+      type: "blog";
+      blogContent: string;
+      keyMessage?: string;
+      platforms: string[];
+    };
+
+interface GenerateFunctionResponse {
+  posts: GeneratedContent;
+}
+
+const GENERATE_FUNCTION_CANDIDATES = ["generate-posts", "generate-post"] as const;
+
+const invokeGenerateFunction = async (payload: GenerateFunctionPayload) => {
+  let lastError: any = null;
+
+  for (const functionName of GENERATE_FUNCTION_CANDIDATES) {
+    const { data, error } = await supabase.functions.invoke<GenerateFunctionResponse>(
+      functionName,
+      {
+        body: payload,
+      }
+    );
+
+    if (!error) {
+      if (functionName !== GENERATE_FUNCTION_CANDIDATES[0]) {
+        console.warn(`Fell back to legacy ${functionName} edge function`);
+      }
+      return data;
+    }
+
+    lastError = error;
+
+    const isMissingFunction = error?.status === 404 || /not found/i.test(error?.message || "");
+    if (!isMissingFunction) {
+      throw error;
+    }
+  }
+
+  throw lastError ?? new Error("Unable to invoke generate post function");
+};
+
 const Index = () => {
   const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -33,11 +83,7 @@ const Index = () => {
 
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-post", {
-        body: { type: "simple", topic, content, tone, platforms },
-      });
-
-      if (error) throw error;
+      const data = await invokeGenerateFunction({ type: "simple", topic, content, tone, platforms });
 
       setGeneratedContent(data.posts);
       toast.success("Content generated successfully!");
@@ -67,11 +113,12 @@ const Index = () => {
 
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-post", {
-        body: { type: "blog", blogContent, keyMessage, platforms },
+      const data = await invokeGenerateFunction({
+        type: "blog",
+        blogContent,
+        keyMessage,
+        platforms,
       });
-
-      if (error) throw error;
 
       setGeneratedContent(data.posts);
       toast.success("Blog content analyzed and posts generated successfully!");
