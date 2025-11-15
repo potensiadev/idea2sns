@@ -24,13 +24,7 @@ interface ContentFormProps {
   isGenerating: boolean;
 }
 
-const PLATFORMS = [
-  { id: "reddit", label: "Reddit", color: "platform-reddit" },
-  { id: "threads", label: "Threads", color: "platform-threads" },
-  { id: "instagram", label: "Instagram", color: "platform-instagram" },
-  { id: "twitter", label: "Twitter (X)", color: "platform-twitter" },
-  { id: "pinterest", label: "Pinterest", color: "platform-pinterest" },
-];
+const PLATFORMS = [{ id: "twitter", label: "Twitter (X)", color: "platform-twitter" }];
 
 const TONES = [
   { value: "professional", label: "Professional" },
@@ -44,9 +38,7 @@ export const ContentForm = ({ onGenerate, isGenerating }: ContentFormProps) => {
   const [topic, setTopic] = useState("");
   const [content, setContent] = useState("");
   const [tone, setTone] = useState("professional");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
-    PLATFORMS.map((p) => p.id)
-  );
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["twitter"]);
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

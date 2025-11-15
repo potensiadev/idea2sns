@@ -12,22 +12,14 @@ interface BlogContentFormProps {
   isGenerating: boolean;
 }
 
-const PLATFORMS = [
-  { id: "reddit", label: "Reddit", color: "platform-reddit" },
-  { id: "threads", label: "Threads", color: "platform-threads" },
-  { id: "instagram", label: "Instagram", color: "platform-instagram" },
-  { id: "twitter", label: "Twitter (X)", color: "platform-twitter" },
-  { id: "pinterest", label: "Pinterest", color: "platform-pinterest" },
-];
+const PLATFORMS = [{ id: "twitter", label: "Twitter (X)", color: "platform-twitter" }];
 
 const MAX_CHARS = 10000; // 블로그 최대 글자 수 제한
 
 export const BlogContentForm = ({ onGenerate, isGenerating }: BlogContentFormProps) => {
   const [blogContent, setBlogContent] = useState("");
   const [keyMessage, setKeyMessage] = useState("");
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
-    PLATFORMS.map((p) => p.id)
-  );
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["twitter"]);
 
   const charCount = blogContent.length;
   const isOverLimit = charCount > MAX_CHARS;

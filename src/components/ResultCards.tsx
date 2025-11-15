@@ -19,35 +19,11 @@ interface ResultCardsProps {
 }
 
 const PLATFORM_CONFIG = {
-  reddit: {
-    name: "Reddit",
-    icon: "🔴",
-    color: "border-platform-reddit",
-    bgColor: "bg-platform-reddit/10",
-  },
-  threads: {
-    name: "Threads",
-    icon: "⚫",
-    color: "border-platform-threads",
-    bgColor: "bg-platform-threads/10",
-  },
-  instagram: {
-    name: "Instagram",
-    icon: "📸",
-    color: "border-platform-instagram",
-    bgColor: "bg-platform-instagram/10",
-  },
   twitter: {
     name: "Twitter (X)",
     icon: "🐦",
     color: "border-platform-twitter",
     bgColor: "bg-platform-twitter/10",
-  },
-  pinterest: {
-    name: "Pinterest",
-    icon: "📌",
-    color: "border-platform-pinterest",
-    bgColor: "bg-platform-pinterest/10",
   },
 } as const;
 

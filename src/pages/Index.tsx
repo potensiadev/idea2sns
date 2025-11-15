@@ -8,13 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, Sparkles } from "lucide-react";
 
-export interface GeneratedContent {
-  reddit: string;
-  threads: string;
-  instagram: string;
-  twitter: string;
-  pinterest: string;
-}
+export type GeneratedContent = Record<string, string>;
 
 type GenerateFunctionPayload =
   | {
@@ -35,7 +29,7 @@ interface GenerateFunctionResponse {
   posts: GeneratedContent;
 }
 
-const GENERATE_FUNCTION_CANDIDATES = ["generate-posts", "generate-post"] as const;
+const GENERATE_FUNCTION_CANDIDATES = ["generate-post"] as const;
 
 const invokeGenerateFunction = async (payload: GenerateFunctionPayload) => {
   let lastError: any = null;

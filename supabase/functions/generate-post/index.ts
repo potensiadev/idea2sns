@@ -15,19 +15,22 @@ function jsonResponse(data: any, status = 200) {
   );
 }
 
+const allowedPlatforms = ["twitter"] as const;
+const platformEnum = z.enum(allowedPlatforms);
+
 const simpleGenerateSchema = z.object({
   type: z.literal("simple"),
   topic: z.string().min(1).max(200),
   content: z.string().min(1).max(3000),
   tone: z.string().min(1).max(50),
-  platforms: z.array(z.enum(['reddit', 'threads', 'instagram', 'twitter', 'pinterest'])).min(1).max(5),
+  platforms: z.array(platformEnum).min(1).max(1),
 });
 
 const blogGenerateSchema = z.object({
   type: z.literal("blog"),
   blogContent: z.string().min(1).max(10000),
   keyMessage: z.string().max(500).optional(),
-  platforms: z.array(z.enum(['reddit', 'threads', 'instagram', 'twitter', 'pinterest'])).min(1).max(5),
+  platforms: z.array(platformEnum).min(1).max(1),
 });
 
 const generateRequestSchema = z.discriminatedUnion("type", [
@@ -36,31 +39,6 @@ const generateRequestSchema = z.discriminatedUnion("type", [
 ]);
 
 const PLATFORM_PROMPTS = {
-  reddit: `Create a Reddit post that:
-- Starts with an engaging hook based on real experience
-- Uses community-friendly tone (authentic, conversational)
-- Includes a clear body with specific details
-- Ends with a question to encourage discussion
-- Keep it concise but informative (200-400 words)
-- Avoid salesy language`,
-
-  threads: `Create a Threads post that:
-- Is extremely concise (50-100 characters ideal)
-- Uses casual, conversational tone
-- Includes relatable insight or observation
-- Can include 1-2 relevant emojis
-- Ends with subtle engagement hook
-- Think Twitter brevity meets Instagram personality`,
-
-  instagram: `Create an Instagram caption that:
-- Starts with an attention-grabbing first line
-- Uses warm, inspirational or aesthetic tone
-- Include 3-4 short paragraphs with line breaks
-- Add relevant emojis naturally throughout
-- End with 20-30 highly relevant hashtags
-- Mix popular and niche hashtags
-- Make it visually scannable`,
-
   twitter: `Create a Twitter/X post that:
 - Delivers one clear insight or value point
 - Uses punchy, direct language
@@ -68,15 +46,6 @@ const PLATFORM_PROMPTS = {
 - Can include 1-2 relevant hashtags
 - Optional: Add a subtle CTA or question
 - Make every word count`,
-
-  pinterest: `Create a Pinterest description that:
-- Starts with a clear, keyword-rich title (60 chars)
-- Includes detailed description (150-500 words)
-- Uses SEO-friendly keywords naturally
-- Focuses on value and actionability
-- Adds 5-10 relevant keyword tags
-- Inspires saving/sharing
-- Be helpful and discoverable`,
 };
 
 serve(async (req) => {
@@ -125,10 +94,10 @@ serve(async (req) => {
 
     const requestData = validationResult.data;
     const platforms = requestData.platforms;
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    if (!OPENAI_API_KEY) {
+      throw new Error("OPENAI_API_KEY is not configured");
     }
 
     console.log("Request type:", requestData.type, "Platforms:", platforms);
@@ -137,14 +106,14 @@ serve(async (req) => {
 
     // Helper function to call AI
     async function callAI(systemPrompt: string, userPrompt: string) {
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          Authorization: `Bearer ${OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "gpt-4o-mini",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
