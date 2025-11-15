@@ -221,7 +221,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
           );
         }
 
-        posts[platform] = result.content;
+        posts[platform] = result.content || "";
       }
     } else {
       // Blog analysis and conversion logic
@@ -268,7 +268,7 @@ Provide a structured summary in JSON format:
       let blogSummary;
       try {
         // Extract JSON from markdown code blocks if present
-        let jsonText = analysisResult.content.trim();
+        let jsonText = (analysisResult.content || "").trim();
         if (jsonText.includes('```json')) {
           jsonText = jsonText.split('```json')[1].split('```')[0].trim();
         } else if (jsonText.includes('```')) {
@@ -319,7 +319,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
           );
         }
 
-        posts[platform] = result.content;
+        posts[platform] = result.content || "";
       }
     }
 
