@@ -12,7 +12,13 @@ interface BlogContentFormProps {
   isGenerating: boolean;
 }
 
-const PLATFORMS = [{ id: "twitter", label: "Twitter (X)", color: "platform-twitter" }];
+const PLATFORMS = [
+  { id: "twitter", label: "Twitter (X)", color: "platform-twitter" },
+  { id: "instagram", label: "Instagram", color: "platform-instagram" },
+  { id: "reddit", label: "Reddit", color: "platform-reddit" },
+  { id: "threads", label: "Threads", color: "platform-threads" },
+  { id: "pinterest", label: "Pinterest", color: "platform-pinterest" }
+];
 
 const MAX_CHARS = 10000; // 블로그 최대 글자 수 제한
 
