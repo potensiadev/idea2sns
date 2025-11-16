@@ -101,6 +101,11 @@ serve(async (req) => {
     } = await supabase.auth.getUser();
 
     if (authError || !user) {
+      console.error("Authentication failed:", {
+        error: authError,
+        hasUser: !!user,
+        authHeader: authHeader ? "present" : "missing"
+      });
       return jsonResponse({ error: "Unauthorized. Invalid or expired authentication token." }, 401);
     }
 
