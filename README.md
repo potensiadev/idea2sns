@@ -32,9 +32,39 @@ cd <YOUR_PROJECT_NAME>
 # Step 3: Install the necessary dependencies.
 npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Step 4: Set up environment variables.
+# Copy the example file and fill in your Supabase credentials
+cp .env.example .env
+# Then edit .env with your actual Supabase project details
+
+# Step 5: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
+
+## Environment Setup
+
+This application requires Supabase environment variables to function. Before running the app:
+
+1. **Copy the example environment file:**
+   ```sh
+   cp .env.example .env
+   ```
+
+2. **Get your Supabase credentials:**
+   - Go to [Supabase Dashboard](https://app.supabase.com)
+   - Select your project (or create a new one)
+   - Navigate to Project Settings → API
+   - Copy your Project URL and anon/public key
+
+3. **Update `.env` with your values:**
+   ```
+   VITE_SUPABASE_URL=https://your-project-id.supabase.co
+   VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key-here
+   ```
+
+4. **For deployment** (Vercel, Netlify, etc.):
+   - Add these same environment variables in your deployment platform's settings
+   - The app will fail fast with clear error messages if variables are missing or invalid
 
 **Edit a file directly in GitHub**
 

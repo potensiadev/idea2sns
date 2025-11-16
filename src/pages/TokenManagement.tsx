@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getFreshAccessToken, isAuthError } from "@/integrations/supabase/auth-utils";
 import type { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -117,12 +118,18 @@ const TokenManagement = () => {
   });
 
   const createAccount = async (payload: TablesInsert<"social_accounts">) => {
+    // Get fresh access token before calling edge function
+    const accessToken = await getFreshAccessToken();
+
     // Encrypt tokens before saving
     const { data: encryptionData, error: encryptionError } = await supabase
       .functions.invoke("encrypt-token", {
         body: {
           access_token: payload.access_token,
           refresh_token: payload.refresh_token || null,
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -151,12 +158,18 @@ const TokenManagement = () => {
   };
 
   const updateAccount = async ({ id, values }: { id: string; values: TablesUpdate<"social_accounts"> }) => {
+    // Get fresh access token before calling edge function
+    const accessToken = await getFreshAccessToken();
+
     // Encrypt tokens before updating
     const { data: encryptionData, error: encryptionError } = await supabase
       .functions.invoke("encrypt-token", {
         body: {
           access_token: values.access_token as string,
           refresh_token: (values.refresh_token as string) || null,
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 
@@ -220,6 +233,11 @@ const TokenManagement = () => {
       setEditingAccount(null);
     },
     onError: (error: any, _, context) => {
+      if (isAuthError(error)) {
+        toast.error("세션이 만료되었습니다. 다시 로그인해주세요.");
+        navigate("/auth", { state: { from: "/tokens" } });
+        return;
+      }
       toast.error(error.message ?? "토큰 저장에 실패했습니다");
       if (context?.previousAccounts) {
         queryClient.setQueryData(["social_accounts"], context.previousAccounts);
@@ -250,6 +268,11 @@ const TokenManagement = () => {
       setFormData(initialFormState);
     },
     onError: (error: any, _, context) => {
+      if (isAuthError(error)) {
+        toast.error("세션이 만료되었습니다. 다시 로그인해주세요.");
+        navigate("/auth", { state: { from: "/tokens" } });
+        return;
+      }
       toast.error(error.message ?? "토큰 수정에 실패했습니다");
       if (context?.previousAccounts) {
         queryClient.setQueryData(["social_accounts"], context.previousAccounts);

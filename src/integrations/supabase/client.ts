@@ -5,6 +5,31 @@ import type { Database } from './types';
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+// Validate required environment variables
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  const missing = [];
+  if (!SUPABASE_URL) missing.push('VITE_SUPABASE_URL');
+  if (!SUPABASE_PUBLISHABLE_KEY) missing.push('VITE_SUPABASE_PUBLISHABLE_KEY');
+
+  throw new Error(
+    `Missing required Supabase environment variables: ${missing.join(', ')}\n\n` +
+    'Please ensure your .env file contains:\n' +
+    '- VITE_SUPABASE_URL=https://your-project.supabase.co\n' +
+    '- VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key\n\n' +
+    'See .env.example for a template.'
+  );
+}
+
+// Validate URL format
+try {
+  new URL(SUPABASE_URL);
+} catch (error) {
+  throw new Error(
+    `Invalid VITE_SUPABASE_URL format: "${SUPABASE_URL}"\n` +
+    'Expected a valid URL like: https://your-project.supabase.co'
+  );
+}
+
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
