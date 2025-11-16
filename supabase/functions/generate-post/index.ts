@@ -10,10 +10,10 @@ const corsHeaders = {
 
 // Helper function for consistent JSON responses
 function jsonResponse(data: any, status = 200) {
-  return new Response(
-    JSON.stringify(data),
-    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
 const allowedPlatforms = ["twitter", "instagram", "reddit", "threads", "pinterest"] as const;
@@ -34,10 +34,7 @@ const blogGenerateSchema = z.object({
   platforms: z.array(platformEnum).min(1).max(5),
 });
 
-const generateRequestSchema = z.discriminatedUnion("type", [
-  simpleGenerateSchema,
-  blogGenerateSchema,
-]);
+const generateRequestSchema = z.discriminatedUnion("type", [simpleGenerateSchema, blogGenerateSchema]);
 
 const PLATFORM_PROMPTS = {
   twitter: `Create a Twitter/X post that:
@@ -51,7 +48,7 @@ const PLATFORM_PROMPTS = {
   instagram: `Create an Instagram caption that:
 - Starts with a hook to grab attention
 - Tells a mini-story or shares valuable insight
-- Maximum 2200 characters but be concise
+- Maximum 1200 characters but be concise
 - Include 5-10 relevant hashtags at the end
 - Use line breaks for readability
 - Engaging and visual language`,
@@ -60,7 +57,7 @@ const PLATFORM_PROMPTS = {
 - Has an informative, specific title
 - Provides genuine value to the community
 - Conversational and authentic tone
-- Maximum 40000 characters but be concise
+- Maximum 20000 characters but be concise
 - Avoid promotional language
 - Encourage discussion with a question`,
 
@@ -91,25 +88,20 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
 
     if (!authHeader) {
-      return jsonResponse(
-        { error: "Unauthorized. Please log in to generate content." },
-        401
-      );
+      return jsonResponse({ error: "Unauthorized. Please log in to generate content." }, 401);
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
+      global: { headers: { Authorization: authHeader } },
+    });
 
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return jsonResponse(
-        { error: "Unauthorized. Invalid or expired authentication token." },
-        401
-      );
+      return jsonResponse({ error: "Unauthorized. Invalid or expired authentication token." }, 401);
     }
 
     const userId = user.id;
@@ -124,9 +116,9 @@ serve(async (req) => {
       return jsonResponse(
         {
           error: "Invalid request data",
-          details: validationResult.error.format()
+          details: validationResult.error.format(),
         },
-        400
+        400,
       );
     }
 
@@ -143,7 +135,10 @@ serve(async (req) => {
     const posts: Record<string, string> = {};
 
     // Helper function to call AI
-    async function callAI(systemPrompt: string, userPrompt: string): Promise<{ content?: string; error?: string; status: number }> {
+    async function callAI(
+      systemPrompt: string,
+      userPrompt: string,
+    ): Promise<{ content?: string; error?: string; status: number }> {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -171,7 +166,7 @@ serve(async (req) => {
         }
         return {
           error: `AI model error: ${response.status} - ${errorText.substring(0, 200)}`,
-          status: 502
+          status: 502,
         };
       }
 
@@ -182,7 +177,7 @@ serve(async (req) => {
         console.error("Failed to parse AI response JSON:", parseError);
         return {
           error: "AI model returned invalid response format",
-          status: 502
+          status: 502,
         };
       }
 
@@ -191,7 +186,7 @@ serve(async (req) => {
         console.error("AI response missing content:", data);
         return {
           error: "AI model did not generate any content. Please try again.",
-          status: 502
+          status: 502,
         };
       }
 
@@ -243,7 +238,7 @@ Your task is to analyze blog content and extract key insights for social media d
 4. Emotional tone
 5. Call-to-action (if any)
 
-${keyMessage ? `The author wants to emphasize: ${keyMessage}\n\n` : ''}
+${keyMessage ? `The author wants to emphasize: ${keyMessage}\n\n` : ""}
 
 Blog content:
 ${blogContent}
@@ -297,7 +292,7 @@ Based on this blog analysis:
 - Tone: ${blogSummary.tone}
 - CTA: ${blogSummary.cta}
 
-${keyMessage ? `IMPORTANT: Make sure to emphasize this key message: ${keyMessage}\n` : ''}
+${keyMessage ? `IMPORTANT: Make sure to emphasize this key message: ${keyMessage}\n` : ""}
 
 Create a ${platform} post that captures the essence of the blog while being optimized for ${platform}'s unique format and audience.
 
@@ -318,9 +313,6 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
     return jsonResponse({ posts });
   } catch (error) {
     console.error("Error in generate-posts function:", error);
-    return jsonResponse(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      500
-    );
+    return jsonResponse({ error: error instanceof Error ? error.message : "Unknown error" }, 500);
   }
 });
