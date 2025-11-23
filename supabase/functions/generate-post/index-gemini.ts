@@ -12,63 +12,79 @@ const simpleGenerateSchema = z.object({
   topic: z.string().min(1).max(200),
   content: z.string().min(1).max(3000),
   tone: z.string().min(1).max(50),
-  platforms: z.array(z.enum(['reddit', 'threads', 'instagram', 'twitter', 'pinterest'])).min(1).max(5),
+  platforms: z
+    .array(z.enum(["reddit", "threads", "instagram", "twitter", "pinterest"]))
+    .min(1)
+    .max(5),
 });
 
 const blogGenerateSchema = z.object({
   type: z.literal("blog"),
   blogContent: z.string().min(1).max(10000),
   keyMessage: z.string().max(500).optional(),
-  platforms: z.array(z.enum(['reddit', 'threads', 'instagram', 'twitter', 'pinterest'])).min(1).max(5),
+  platforms: z
+    .array(z.enum(["reddit", "threads", "instagram", "twitter", "pinterest"]))
+    .min(1)
+    .max(5),
 });
 
-const generateRequestSchema = z.discriminatedUnion("type", [
-  simpleGenerateSchema,
-  blogGenerateSchema,
-]);
+const generateRequestSchema = z.discriminatedUnion("type", [simpleGenerateSchema, blogGenerateSchema]);
 
 const PLATFORM_PROMPTS = {
-  reddit: `Create a Reddit post that:
-- Starts with an engaging hook based on real experience
-- Uses community-friendly tone (authentic, conversational)
-- Includes a clear body with specific details
-- Ends with a question to encourage discussion
-- Keep it concise but informative (200-400 words)
-- Avoid salesy language`,
+  reddit: `Write a Reddit post that feels like it was created by someone sharing a real experience with the community. 
+Follow these guidelines:
+- Open with a relatable hook based on an authentic moment or personal observation
+- Maintain a conversational, down-to-earth tone that fits Reddit culture
+- Provide concrete details, examples, or context in the body to make the story feel grounded
+- Close with a natural, curiosity-driven question that encourages discussion
+- Length should be 200–400 words, informative without unnecessary filler
+- Absolutely avoid anything promotional, sales-driven, or overly polished
+- Do not repeat wording or structure from any other platform output
+- Never use # or ## symbols unless it's for an actual hashtag (which Reddit does not require)`,
 
-  threads: `Create a Threads post that:
-- Is extremely concise (50-100 characters ideal)
-- Uses casual, conversational tone
-- Includes relatable insight or observation
-- Can include 1-2 relevant emojis
-- Ends with subtle engagement hook
-- Think Twitter brevity meets Instagram personality`,
+  threads: `Write a Threads post that captures a quick, punchy thought inspired by the source content. 
+Follow these guidelines:
+- Keep it extremely short (50–100 characters ideally)
+- Use a relaxed, conversational tone that feels spontaneous
+- Include a relatable insight or tiny moment of clarity
+- You may use 1–2 emojis, but only if they fit naturally
+- End with a light engagement nudge, not a CTA
+- Style should blend Twitter brevity with Instagram personality
+- Avoid repeating any phrasing used in other platform outputs
+- Do not use # or ## unless they're actual hashtags (rarely needed here)`,
 
-  instagram: `Create an Instagram caption that:
-- Starts with an attention-grabbing first line
-- Uses warm, inspirational or aesthetic tone
-- Include 3-4 short paragraphs with line breaks
-- Add relevant emojis naturally throughout
-- End with 20-30 highly relevant hashtags
-- Mix popular and niche hashtags
-- Make it visually scannable`,
+  instagram: `Write an Instagram caption that reads smoothly and visually like a native IG post.
+Follow these guidelines:
+- Start with a strong first line that instantly catches attention
+- Use a warm, aesthetic, or inspiring tone throughout
+- Structure the caption into 3–4 short paragraphs with intentional line breaks
+- Place emojis naturally within sentences or at the end of lines (not overused)
+- Finish with 20–30 relevant hashtags mixing both popular and niche keywords
+- Ensure the caption is easy to skim and visually pleasant
+- Do not reuse sentence structures from other platform outputs
+- Do not use # or ## except for hashtags at the end`,
 
-  twitter: `Create a Twitter/X post that:
-- Delivers one clear insight or value point
-- Uses punchy, direct language
-- Maximum 280 characters
-- Can include 1-2 relevant hashtags
-- Optional: Add a subtle CTA or question
-- Make every word count`,
+  twitter: `Write a Twitter/X post that delivers one sharp insight from the content.
+Follow these guidelines:
+- Focus on one clear takeaway or value point
+- Use concise, direct, punchy language
+- Stay within 280 characters
+- You may include 1–2 relevant hashtags used naturally
+- Optionally end with a gentle question or light CTA
+- Every word should contribute meaning—no filler
+- Do not reuse phrasing from any other platform outputs
+- Do not use # or ## except for hashtags`,
 
-  pinterest: `Create a Pinterest description that:
-- Starts with a clear, keyword-rich title (60 chars)
-- Includes detailed description (150-500 words)
-- Uses SEO-friendly keywords naturally
-- Focuses on value and actionability
-- Adds 5-10 relevant keyword tags
-- Inspires saving/sharing
-- Be helpful and discoverable`,
+  pinterest: `Write a Pinterest description that helps users understand, save, and use the content.
+Follow these guidelines:
+- Begin with a keyword-rich, clear title of about 60 characters
+- Provide a detailed description (150–500 words) that feels educational and helpful
+- Naturally incorporate SEO-friendly keywords throughout the description
+- Focus on actionability: what someone could learn, try, or apply
+- End with 5–10 keyword tags (not hashtags, no # symbol)
+- Aim for a warm, informative tone that encourages saving or sharing
+- Ensure the writing differs in style from all other platform outputs
+- Never use # or ## anywhere in the body`,
 };
 
 serve(async (req) => {
@@ -80,24 +96,25 @@ serve(async (req) => {
     // Verify authentication
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Missing authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
+      global: { headers: { Authorization: authHeader } },
+    });
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Validate input
@@ -106,10 +123,10 @@ serve(async (req) => {
 
     if (!validationResult.success) {
       console.error("Validation error:", validationResult.error);
-      return new Response(
-        JSON.stringify({ error: "Invalid request data", details: validationResult.error }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid request data", details: validationResult.error }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const requestData = validationResult.data;
@@ -128,25 +145,32 @@ serve(async (req) => {
     async function callGemini(systemPrompt: string, userPrompt: string) {
       const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: fullPrompt,
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.9,
+              topK: 40,
+              topP: 0.95,
+              maxOutputTokens: 2048,
+            },
+          }),
         },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text: fullPrompt
-            }]
-          }],
-          generationConfig: {
-            temperature: 0.9,
-            topK: 40,
-            topP: 0.95,
-            maxOutputTokens: 2048,
-          }
-        }),
-      });
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -189,10 +213,10 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
         const result = await callGemini(systemPrompt, userPrompt);
 
         if (result.error) {
-          return new Response(
-            JSON.stringify({ error: result.error }),
-            { status: result.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: result.error }), {
+            status: result.status,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         posts[platform] = result.content;
@@ -214,7 +238,7 @@ Your task is to analyze blog content and extract key insights for social media d
 4. Emotional tone
 5. Call-to-action (if any)
 
-${keyMessage ? `The author wants to emphasize: ${keyMessage}\n\n` : ''}
+${keyMessage ? `The author wants to emphasize: ${keyMessage}\n\n` : ""}
 
 Blog content:
 ${blogContent}
@@ -231,10 +255,10 @@ Provide a structured summary in JSON format:
       const analysisResult = await callGemini(analysisSystemPrompt, analysisUserPrompt);
 
       if (analysisResult.error) {
-        return new Response(
-          JSON.stringify({ error: analysisResult.error }),
-          { status: analysisResult.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: analysisResult.error }), {
+          status: analysisResult.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
       console.log("Blog analysis complete:", analysisResult.content);
@@ -243,10 +267,10 @@ Provide a structured summary in JSON format:
       try {
         // Extract JSON from markdown code blocks if present
         let jsonText = analysisResult.content.trim();
-        if (jsonText.includes('```json')) {
-          jsonText = jsonText.split('```json')[1].split('```')[0].trim();
-        } else if (jsonText.includes('```')) {
-          jsonText = jsonText.split('```')[1].split('```')[0].trim();
+        if (jsonText.includes("```json")) {
+          jsonText = jsonText.split("```json")[1].split("```")[0].trim();
+        } else if (jsonText.includes("```")) {
+          jsonText = jsonText.split("```")[1].split("```")[0].trim();
         }
         blogSummary = JSON.parse(jsonText);
       } catch (e) {
@@ -278,7 +302,7 @@ Based on this blog analysis:
 - Tone: ${blogSummary.tone}
 - CTA: ${blogSummary.cta}
 
-${keyMessage ? `IMPORTANT: Make sure to emphasize this key message: ${keyMessage}\n` : ''}
+${keyMessage ? `IMPORTANT: Make sure to emphasize this key message: ${keyMessage}\n` : ""}
 
 Create a ${platform} post that captures the essence of the blog while being optimized for ${platform}'s unique format and audience.
 
@@ -287,10 +311,10 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
         const result = await callGemini(systemPrompt, userPrompt);
 
         if (result.error) {
-          return new Response(
-            JSON.stringify({ error: result.error }),
-            { status: result.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ error: result.error }), {
+            status: result.status,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
         }
 
         posts[platform] = result.content;
@@ -299,15 +323,12 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
 
     console.log("Successfully generated posts for all platforms");
 
-    return new Response(
-      JSON.stringify({ posts }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ posts }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Error in generate-post function:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
