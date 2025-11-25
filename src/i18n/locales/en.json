@@ -7,6 +7,69 @@
     "login": "Login",
     "signup": "Sign Up"
   },
+  "landing": {
+    "nav": {
+      "login": "Login",
+      "getStarted": "Get Started"
+    },
+    "hero": {
+      "badge": "AI-Powered Content Generation",
+      "title": {
+        "part1": "Post to 5 Platforms",
+        "part2": "with One Click"
+      },
+      "subtitle": "Enter your blog post or idea, and AI will automatically generate platform-optimized content for each social media",
+      "cta": "Start for Free",
+      "tryDemo": "Try Demo"
+    },
+    "stats": {
+      "platforms": "Platforms",
+      "timeSaved": "Time Saved",
+      "users": "Users"
+    },
+    "features": {
+      "title": "Why Choose OneSNS.ai?",
+      "subtitle": "The perfect solution for content marketers and creators",
+      "multiPlatform": {
+        "title": "5 Platforms at Once",
+        "description": "Generate optimized content for Reddit, Threads, Instagram, Twitter, and Pinterest - all tailored to each platform's unique characteristics"
+      },
+      "optimized": {
+        "title": "Platform-Optimized",
+        "description": "Achieve higher reach and engagement with customized content that considers each platform's algorithm and user behavior"
+      },
+      "timeSaving": {
+        "title": "Save 90% of Time",
+        "description": "Reduce hours of content writing and editing work to just a few minutes every day"
+      }
+    },
+    "benefits": {
+      "title": "Perfect for You",
+      "subtitle": "Solve all your content creation challenges",
+      "noRewriting": "No need to rewrite for each platform",
+      "platformOptimized": "Automatic optimization for each platform",
+      "aiPowered": "Natural writing with latest AI technology",
+      "instantGeneration": "Instant generation with one click",
+      "professionalQuality": "Professional-grade quality guaranteed",
+      "multilingual": "Multi-language support for global reach",
+      "cta": "Get Started Now"
+    },
+    "showcase": {
+      "engagement": "Engagement Increase",
+      "timeSaved": "Time Saved per Week",
+      "hours": "hours/week",
+      "quality": "Content Quality",
+      "professional": "Professional"
+    },
+    "cta": {
+      "title": "Start Now",
+      "subtitle": "Start for free and experience perfect social media content created by AI",
+      "button": "Start for Free"
+    },
+    "footer": {
+      "rights": "All rights reserved."
+    }
+  },
   "contentForm": {
     "topic": "Content Topic",
     "topicPlaceholder": "e.g., Launch of our new AI product",
@@ -28,7 +91,7 @@
     "title": "Transform Blog Content into Social Media Posts",
     "description": "Paste your blog post and AI will automatically generate optimized posts for each social media platform",
     "blogContent": "Full Blog Content",
-    "blogPlaceholder": "Paste your entire blog content here. AI will analyze the key points and create posts tailored to each platform...\n\nExample:\nToday we'll explore the new features in React 19.\n\nReact 19 has stabilized Server Components and...\n(full blog content)",
+    "blogPlaceholder": "Paste your entire blog content here. AI will analyze the key points and create posts tailored to each platform...",
     "characters": "chars",
     "overLimit": "⚠️ Content is too long. Please reduce to {max} characters or less for AI processing.",
     "tip": "💡 Tip: AI automatically summarizes long blogs and adapts them for each platform",
