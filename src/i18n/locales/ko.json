@@ -7,6 +7,69 @@
     "login": "로그인",
     "signup": "회원가입"
   },
+  "landing": {
+    "nav": {
+      "login": "로그인",
+      "getStarted": "시작하기"
+    },
+    "hero": {
+      "badge": "AI 기반 콘텐츠 생성",
+      "title": {
+        "part1": "한 번의 클릭으로",
+        "part2": "5개 플랫폼 동시 포스팅"
+      },
+      "subtitle": "블로그 글이나 아이디어를 입력하면 AI가 각 소셜 미디어 플랫폼에 최적화된 콘텐츠를 자동으로 생성해드립니다",
+      "cta": "무료로 시작하기",
+      "tryDemo": "데모 체험하기"
+    },
+    "stats": {
+      "platforms": "지원 플랫폼",
+      "timeSaved": "시간 절약",
+      "users": "누적 사용자"
+    },
+    "features": {
+      "title": "왜 OneSNS.ai를 선택해야 할까요?",
+      "subtitle": "콘텐츠 마케터와 크리에이터를 위한 완벽한 솔루션",
+      "multiPlatform": {
+        "title": "5개 플랫폼 동시 생성",
+        "description": "Reddit, Threads, Instagram, Twitter, Pinterest - 각 플랫폼의 특성에 맞춰 최적화된 콘텐츠를 한 번에 생성합니다"
+      },
+      "optimized": {
+        "title": "플랫폼별 최적화",
+        "description": "각 플랫폼의 알고리즘과 사용자 특성을 고려한 맞춤형 콘텐츠로 더 높은 도달률과 참여율을 달성하세요"
+      },
+      "timeSaving": {
+        "title": "시간 90% 절약",
+        "description": "매일 수 시간 걸리던 콘텐츠 작성과 수정 작업을 단 몇 분으로 단축시켜드립니다"
+      }
+    },
+    "benefits": {
+      "title": "이런 분들에게 완벽합니다",
+      "subtitle": "콘텐츠 제작의 모든 고민을 해결해드립니다",
+      "noRewriting": "플랫폼마다 다시 쓸 필요 없음",
+      "platformOptimized": "각 플랫폼 특성에 맞춘 자동 최적화",
+      "aiPowered": "최신 AI 기술로 자연스러운 문장 생성",
+      "instantGeneration": "클릭 한 번으로 즉시 생성",
+      "professionalQuality": "전문가 수준의 퀄리티 보장",
+      "multilingual": "다국어 지원으로 글로벌 진출",
+      "cta": "지금 시작하기"
+    },
+    "showcase": {
+      "engagement": "참여율 증가",
+      "timeSaved": "주당 절약 시간",
+      "hours": "시간/주",
+      "quality": "콘텐츠 품질",
+      "professional": "전문가급"
+    },
+    "cta": {
+      "title": "지금 바로 시작하세요",
+      "subtitle": "무료로 시작하고 AI가 만들어주는 완벽한 소셜 미디어 콘텐츠를 경험하세요",
+      "button": "무료로 시작하기"
+    },
+    "footer": {
+      "rights": "All rights reserved."
+    }
+  },
   "contentForm": {
     "topic": "콘텐츠 주제",
     "topicPlaceholder": "예: 새로운 AI 제품 출시",
@@ -65,7 +128,7 @@
     "resendEmail": "인증 이메일 다시 받기",
     "errors": {
       "invalidEmail": "올바른 이메일 주소를 입력해주세요",
-      "passwordMin": "비밀번호는 최소 8자 이상이어야 해요",
+      "passwordMin": "비밀번호는 최소 6자 이상이어야 해요",
       "alreadyRegistered": "이미 가입된 이메일이에요. 로그인해주세요.",
       "invalidCredentials": "이메일 또는 비밀번호가 올바르지 않아요. 회원가입 후 이메일 인증을 완료하셨나요?",
       "emailNotConfirmedError": "이메일 인증이 필요해요. 받은 메일함을 확인해주세요."
