@@ -9,22 +9,23 @@ import { createSupabaseClient, getAuthenticatedUser } from "../_shared/supabaseC
 import { platformEnum, platformRules, type Platform } from "../_shared/platformRules.ts";
 import { usageGuard } from "../_shared/usageGuard.ts";
 
-const requestSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("simple"),
-    topic: z.string().min(1),
-    content: z.string().min(1),
-    tone: z.string().min(1),
-    platforms: z.array(platformEnum).min(1),
+const requestSchema = z
+  .object({
+    sourceType: z.enum(["url", "text"]),
+    url: z.string().url().optional(),
+    blogContent: z.string().min(1).optional(),
+    platforms: z.array(platformEnum).min(1).max(5),
+    tone: z.string().min(1).optional(),
     brandVoiceId: z.string().uuid().nullable().optional(),
-  }),
-  z.object({
-    type: z.literal("blog"),
-    blogContent: z.string().min(1),
-    platforms: z.array(platformEnum).min(1),
-    brandVoiceId: z.string().uuid().nullable().optional(),
-  }),
-]);
+  })
+  .superRefine((val, ctx) => {
+    if (val.sourceType === "url" && !val.url) {
+      ctx.addIssue({ code: "custom", message: "url is required when sourceType is 'url'" });
+    }
+    if (val.sourceType === "text" && !val.blogContent) {
+      ctx.addIssue({ code: "custom", message: "blogContent is required when sourceType is 'text'" });
+    }
+  });
 
 async function resolveBrandVoice(
   supabase: SupabaseClient,
@@ -50,7 +51,7 @@ async function resolveBrandVoice(
 function parsePosts(raw: string, requestedPlatforms: Platform[]) {
   try {
     const parsed = JSON.parse(raw);
-    const result: Record<Platform, string> = {} as Record<Platform, string>;
+    const result: Partial<Record<Platform, string>> = {};
     for (const platform of requestedPlatforms) {
       if (typeof parsed?.[platform] !== "string" || !parsed[platform].trim()) {
         throw new Error(`Missing content for ${platform}`);
@@ -63,6 +64,12 @@ function parsePosts(raw: string, requestedPlatforms: Platform[]) {
       `Failed to parse AI output as JSON: ${error instanceof Error ? error.message : String(error)} | Raw: ${raw}`,
     );
   }
+}
+
+function extractTextFromHtml(html: string): string {
+  const withoutScripts = html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "").replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, "");
+  const text = withoutScripts.replace(/<[^>]+>/g, " ");
+  return text.replace(/\s+/g, " ").trim();
 }
 
 serve(async (req) => {
@@ -84,14 +91,14 @@ serve(async (req) => {
       return jsonError("AUTH_REQUIRED", "Authentication required", 401);
     }
 
-    let payload: RequestShape;
+    let payload: z.infer<typeof requestSchema>;
     try {
       const body = await req.json();
       const result = requestSchema.safeParse(body);
       if (!result.success) {
         return jsonError("VALIDATION_ERROR", "Invalid request body", 400, result.error.format());
       }
-      payload = result.data as RequestShape;
+      payload = result.data;
     } catch (error) {
       return jsonError(
         "VALIDATION_ERROR",
@@ -101,17 +108,35 @@ serve(async (req) => {
       );
     }
 
+    let sourceContent = payload.blogContent ?? "";
+    if (payload.sourceType === "url") {
+      try {
+        const response = await fetch(payload.url!);
+        if (!response.ok) {
+          return jsonError("PROVIDER_ERROR", `Failed to fetch URL: ${response.status}`, 502);
+        }
+        const html = await response.text();
+        sourceContent = extractTextFromHtml(html);
+        if (!sourceContent) {
+          return jsonError("PROVIDER_ERROR", "Fetched content was empty", 502);
+        }
+      } catch (error) {
+        console.error("Fetch error", error);
+        return jsonError(
+          "PROVIDER_ERROR",
+          "Failed to fetch or parse source URL",
+          502,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    }
+
     try {
-      await usageGuard(
-        supabase,
-        user.id,
-        payload.type === "blog" ? "blog_to_sns" : "generate_post",
-        {
-          platformCount: payload.platforms.length,
-          blogLength: payload.type === "blog" ? payload.blogContent.length : undefined,
-          brandVoiceRequested: Boolean(payload.brandVoiceId),
-        },
-      );
+      await usageGuard(supabase, user.id, "blog_to_sns", {
+        platformCount: payload.platforms.length,
+        blogLength: sourceContent.length,
+        brandVoiceRequested: Boolean(payload.brandVoiceId),
+      });
     } catch (error) {
       if (error instanceof Response) {
         return error;
@@ -128,27 +153,52 @@ serve(async (req) => {
       return jsonError("INTERNAL_ERROR", "Failed to load brand voice", 500);
     }
 
-    const rules = payload.platforms.reduce((acc, platform) => {
-      acc[platform] = platformRules[platform];
-      return acc;
-    }, {} as Record<Platform, string>);
-
-    const prompt = promptBuilder({ request: payload, platformRules: rules, brandVoice });
-
-    let aiResult;
+    let summary = sourceContent;
     try {
-      aiResult = await aiRouter(prompt);
+      const summaryPrompt =
+        "Summarize the following blog/article content into a concise, well-structured summary (max 220 words). Return plain text only.\n" +
+        sourceContent;
+      const summaryResult = await aiRouter(summaryPrompt);
+      if (!summaryResult.content || !summaryResult.content.trim()) {
+        return jsonError("PROVIDER_ERROR", "AI response missing summary content", 502);
+      }
+      summary = summaryResult.content.trim();
     } catch (error) {
-      console.error("AI provider error", error);
+      console.error("AI summary error", error);
       return jsonError(
         "PROVIDER_ERROR",
-        "All AI providers failed",
+        "All AI providers failed during summarization",
         502,
         error instanceof Error ? error.message : String(error),
       );
     }
 
-    let posts: Record<Platform, string>;
+    const rules = payload.platforms.reduce((acc, platform) => {
+      acc[platform] = platformRules[platform];
+      return acc;
+    }, {} as Record<Platform, string>);
+
+    const requestShape: RequestShape = {
+      type: "blog",
+      blogContent: payload.tone ? `Tone hint: ${payload.tone}\n\n${summary}` : summary,
+      platforms: payload.platforms,
+      brandVoiceId: payload.brandVoiceId ?? null,
+    };
+
+    const generationPrompt = promptBuilder({ request: requestShape, platformRules: rules, brandVoice });
+
+    let aiResult;
+    try {
+      aiResult = await aiRouter(generationPrompt);
+    } catch (error) {
+      console.error("AI provider error", error);
+      return jsonError(
+        "PROVIDER_ERROR",
+        "All AI providers failed", 502, error instanceof Error ? error.message : String(error),
+      );
+    }
+
+    let posts: Partial<Record<Platform, string>>;
     try {
       posts = parsePosts(aiResult.content, payload.platforms);
     } catch (error) {
@@ -163,14 +213,14 @@ serve(async (req) => {
 
     const insertPayload = {
       user_id: user.id,
-      source: payload.type === "simple" ? "idea" : "blog",
-      topic: payload.type === "simple" ? payload.topic : null,
-      content: payload.type === "simple" ? payload.content : payload.blogContent,
-      tone: payload.type === "simple" ? payload.tone : null,
-      platforms: payload.platforms,
-      outputs: posts,
-      variant_type: "original",
-      parent_generation_id: null,
+      type: "blog_to_sns",
+      input: {
+        sourceType: payload.sourceType,
+        url: payload.url ?? null,
+        blogContent: sourceContent,
+        platforms: payload.platforms,
+      },
+      output: posts,
     };
 
     const { data: generationInsert, error: generationError } = await supabase
