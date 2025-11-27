@@ -57,7 +57,7 @@ const Landing = () => {
 
           <div className="flex items-center gap-3">
             <LanguageSwitcher />
-            <Button variant="ghost" onClick={() => navigate("/app")} className="font-semibold">
+            <Button variant="ghost" onClick={() => navigate("/auth")} className="font-semibold">
               {t("landing.nav.login")}
             </Button>
             <Button onClick={() => navigate("/auth")} className="font-semibold">
@@ -98,7 +98,7 @@ const Landing = () => {
               size="lg"
               variant="outline"
               className="h-16 px-8 text-lg font-semibold rounded-xl"
-              onClick={() => navigate("/app")}
+              onClick={() => navigate("/create")}
             >
               {t("landing.hero.tryDemo")}
             </Button>

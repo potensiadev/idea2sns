@@ -2,10 +2,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { toast } from "sonner";
-import { GeneratedContent } from "@/pages/Index";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+
+export type GeneratedContent = Record<string, string>;
 
 interface ResultCardsProps {
   content: GeneratedContent;

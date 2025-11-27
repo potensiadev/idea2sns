@@ -31,7 +31,7 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate("/app");
+        navigate("/create");
       }
     };
     checkUser();
@@ -39,7 +39,7 @@ const Auth = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session && event === "SIGNED_IN") {
-        navigate("/app");
+        navigate("/create");
       }
     });
 
@@ -53,7 +53,7 @@ const Auth = () => {
       const validated = authSchema.parse({ email, password, fullName });
       setIsLoading(true);
 
-      const redirectUrl = `${window.location.origin}/app`;
+      const redirectUrl = `${window.location.origin}/create`;
 
       console.log("Attempting signup with:", {
         email: validated.email,
@@ -177,7 +177,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/app`,
+          redirectTo: `${window.location.origin}/create`,
         }
       });
 
