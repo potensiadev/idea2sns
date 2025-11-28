@@ -12,13 +12,13 @@ import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { useAppStore } from '@/store/useAppStore';
 import { edgeFunctions } from '@/api/edgeFunctions';
 import { toast } from 'sonner';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Sparkles, AlertCircle, FileText, Link as LinkIcon, Copy, CheckCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { GeneratedContent, ResultCards } from '@/components/ResultCards';
 import { Link } from 'react-router-dom';
 import { z } from 'zod';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { UpgradeToProModal } from '@/components/UpgradeToProModal';
 
 // Validation schemas
 const blogContentSchema = z.string()
@@ -439,24 +439,42 @@ export default function Create() {
                     />
 
                     {/* Brand Voice Toggle */}
-                    {brandVoiceAllowed && (
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="brand-voice" className="text-base">
-                            Use Brand Voice
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Apply your saved brand voice to all posts
-                          </p>
-                        </div>
-                        <Switch
-                          id="brand-voice"
-                          checked={useBrandVoice}
-                          onCheckedChange={setUseBrandVoice}
-                          disabled={isLoading}
-                        />
+                    <div className={`flex items-center justify-between p-4 border rounded-lg ${!brandVoiceAllowed ? 'opacity-60' : ''}`}>
+                      <div className="space-y-0.5">
+                        <Label htmlFor="brand-voice" className="text-base">
+                          Use Brand Voice
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Apply your saved brand voice to all posts
+                        </p>
+                        {!brandVoiceAllowed && (
+                          <Button
+                            variant="link"
+                            className="px-0 text-primary"
+                            type="button"
+                            onClick={() => {
+                              setUpgradeReason('Brand Voice is a Pro feature. Activate Pro to enable this toggle.');
+                              setShowUpgradeModal(true);
+                            }}
+                          >
+                            Activate Pro to use Brand Voice
+                          </Button>
+                        )}
                       </div>
-                    )}
+                      <Switch
+                        id="brand-voice"
+                        checked={useBrandVoice}
+                        onCheckedChange={(checked) => {
+                          if (!brandVoiceAllowed) {
+                            setUpgradeReason('Brand Voice is a Pro feature. Activate Pro to enable this toggle.');
+                            setShowUpgradeModal(true);
+                            return;
+                          }
+                          setUseBrandVoice(checked);
+                        }}
+                        disabled={isLoading || !brandVoiceAllowed}
+                      />
+                    </div>
 
                     {/* Submit Button */}
                     <Button
@@ -665,24 +683,42 @@ export default function Create() {
                     />
 
                     {/* Brand Voice Toggle */}
-                    {brandVoiceAllowed && (
-                      <div className="flex items-center justify-between p-4 border rounded-lg">
-                        <div className="space-y-0.5">
-                          <Label htmlFor="blog-brand-voice" className="text-base">
-                            Use Brand Voice
-                          </Label>
-                          <p className="text-sm text-muted-foreground">
-                            Apply your saved brand voice to all posts
-                          </p>
-                        </div>
-                        <Switch
-                          id="blog-brand-voice"
-                          checked={blogUseBrandVoice}
-                          onCheckedChange={setBlogUseBrandVoice}
-                          disabled={isLoading}
-                        />
+                    <div className={`flex items-center justify-between p-4 border rounded-lg ${!brandVoiceAllowed ? 'opacity-60' : ''}`}>
+                      <div className="space-y-0.5">
+                        <Label htmlFor="blog-brand-voice" className="text-base">
+                          Use Brand Voice
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Apply your saved brand voice to all posts
+                        </p>
+                        {!brandVoiceAllowed && (
+                          <Button
+                            variant="link"
+                            className="px-0 text-primary"
+                            type="button"
+                            onClick={() => {
+                              setUpgradeReason('Brand Voice is a Pro feature. Activate Pro to enable this toggle.');
+                              setShowUpgradeModal(true);
+                            }}
+                          >
+                            Activate Pro to use Brand Voice
+                          </Button>
+                        )}
                       </div>
-                    )}
+                      <Switch
+                        id="blog-brand-voice"
+                        checked={blogUseBrandVoice}
+                        onCheckedChange={(checked) => {
+                          if (!brandVoiceAllowed) {
+                            setUpgradeReason('Brand Voice is a Pro feature. Activate Pro to enable this toggle.');
+                            setShowUpgradeModal(true);
+                            return;
+                          }
+                          setBlogUseBrandVoice(checked);
+                        }}
+                        disabled={isLoading || !brandVoiceAllowed}
+                      />
+                    </div>
 
                     {/* Submit Button */}
                     <Button
@@ -922,31 +958,11 @@ export default function Create() {
           </TabsContent>
         </Tabs>
 
-        {/* Upgrade Modal */}
-        <AlertDialog open={showUpgradeModal} onOpenChange={setShowUpgradeModal}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                Upgrade to Pro
-              </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-4 pt-4">
-                <p>{upgradeReason || 'Upgrade to unlock this feature.'}</p>
-                <p>
-                  Pro plan includes unlimited platforms, unlimited daily generations, blog-to-SNS conversion, brand voice, and more!
-                </p>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction asChild>
-                <Link to="/account">
-                  View Plans
-                </Link>
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <UpgradeToProModal
+          open={showUpgradeModal}
+          onOpenChange={setShowUpgradeModal}
+          reason={upgradeReason}
+        />
       </div>
     </div>
   );
