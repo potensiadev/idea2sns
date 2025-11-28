@@ -36,7 +36,7 @@ interface Generation {
 interface HistoryResponse {
   items: Generation[];
   total: number;
-  history_limit?: number | null;
+  history_limit: number | null;
 }
 
 const TYPE_OPTIONS = [
@@ -56,10 +56,19 @@ export default function History() {
   const [dateTo, setDateTo] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [selectedGeneration, setSelectedGeneration] = useState<Generation | null>(null);
+  const [historyLimitValue, setHistoryLimitValue] = useState<number | null>(limits.history_limit ?? null);
+  const [noMoreResults, setNoMoreResults] = useState(false);
 
   const limit = 20;
-  const isAtHistoryLimit = historyLimit !== null && generations.length >= historyLimit;
-  const shouldShowUpgrade = historyLimit !== null && total > historyLimit;
+  const historyLimit = historyLimitValue ?? null;
+  const maxPages = historyLimit ? Math.ceil(historyLimit / limit) : null;
+  const loadedItems = Math.min((page + 1) * limit, total);
+  const reachedHistoryLimit = historyLimit !== null && loadedItems >= historyLimit;
+  const canLoadMore =
+    !noMoreResults &&
+    !reachedHistoryLimit &&
+    (maxPages === null || page < maxPages - 1) &&
+    loadedItems < total;
 
   useEffect(() => {
     loadGenerations();
@@ -68,6 +77,7 @@ export default function History() {
   const loadGenerations = async () => {
     try {
       setIsLoading(true);
+      setNoMoreResults(false);
 
       const { data, error } = await edgeFunctions.getGenerations({
         limit,
@@ -84,10 +94,11 @@ export default function History() {
 
       if (data) {
         const response = data as HistoryResponse;
+        setHistoryLimitValue(response.history_limit ?? null);
         setGenerations(response.items);
         setTotal(response.total);
-        if (response.history_limit !== undefined) {
-          setHistoryLimit(response.history_limit);
+        if (response.items.length === 0) {
+          setNoMoreResults(true);
         }
       }
     } catch (err) {
@@ -105,6 +116,7 @@ export default function History() {
       setSelectedTypes([...selectedTypes, typeId]);
     }
     setPage(0);
+    setNoMoreResults(false);
   };
 
   const handleClearFilters = () => {
@@ -112,6 +124,7 @@ export default function History() {
     setDateFrom('');
     setDateTo('');
     setPage(0);
+    setNoMoreResults(false);
   };
 
   const getTypeLabel = (source: string) => {
@@ -254,6 +267,19 @@ export default function History() {
           </Card>
         )}
 
+        {reachedHistoryLimit && historyLimit !== null && (
+          <Card className="mb-6 border-primary/30 bg-primary/5">
+            <CardContent className="pt-6 space-y-2">
+              <p className="text-sm font-medium">
+                Free plan allows viewing up to {historyLimit} history items.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Upgrade to Pro for unlimited history.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Content */}
         <Card>
           <CardHeader>
@@ -346,19 +372,16 @@ export default function History() {
                   >
                     Previous
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(page + 1)}
-                    disabled={
-                      isLoading ||
-                      generations.length === 0 ||
-                      (page + 1) * limit >= total ||
-                      isAtHistoryLimit
-                    }
-                  >
-                    Next
-                  </Button>
+                  {canLoadMore && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage(page + 1)}
+                      disabled={isLoading}
+                    >
+                      Next
+                    </Button>
+                  )}
                 </div>
               </div>
             )}

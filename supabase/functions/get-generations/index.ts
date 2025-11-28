@@ -68,26 +68,26 @@ serve(async (req) => {
       ? profile.limits.history_limit
       : null;
 
-    const applyFilters = (query: any) => {
-      let filtered = query.eq("user_id", user.id);
+    const applyFilters = (builder: ReturnType<SupabaseClient["from"]>) => {
+      let query = builder.eq("user_id", user.id);
 
       if (payload.types && payload.types.length > 0) {
-        filtered = filtered.in("source", payload.types);
+        query = query.in("source", payload.types);
       }
 
       if (payload.from) {
-        filtered = filtered.gte("created_at", payload.from);
+        query = query.gte("created_at", payload.from);
       }
 
       if (payload.to) {
-        filtered = filtered.lte("created_at", payload.to);
+        query = query.lte("created_at", payload.to);
       }
 
-      return filtered;
+      return query;
     };
 
     const { count, error: countError } = await applyFilters(
-      supabase.from("generations").select("id", { head: true, count: "exact" })
+      supabase.from("generations").select("id", { head: true, count: "exact" }),
     );
 
     if (countError) {
@@ -109,7 +109,7 @@ serve(async (req) => {
       supabase
         .from("generations")
         .select("id,source,content,outputs,platforms,topic,tone,variant_type,created_at")
-        .order("created_at", { ascending: false })
+        .order("created_at", { ascending: false }),
     ).range(rangeStart, rangeEnd);
 
     if (error) {

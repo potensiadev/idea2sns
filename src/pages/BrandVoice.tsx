@@ -13,6 +13,7 @@ import { edgeFunctions } from '@/api/edgeFunctions';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 
 interface ExtractedVoice {
   tone: string;
@@ -30,9 +31,10 @@ interface ExtractionResult {
 export default function BrandVoice() {
   const { brandVoiceAllowed } = useAppStore();
   const [title, setTitle] = useState('');
-  const [samples, setSamples] = useState<string[]>(['', '', '']);
+  const [samples, setSamples] = useState<string[]>(['']);
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ExtractionResult | null>(null);
+  const [setAsDefault, setSetAsDefault] = useState(false);
 
   const addSample = () => {
     if (samples.length < 3) {
@@ -110,8 +112,9 @@ export default function BrandVoice() {
 
   const handleReset = () => {
     setTitle('');
-    setSamples(['', '', '']);
+    setSamples(['']);
     setResult(null);
+    setSetAsDefault(false);
   };
 
   return (
@@ -128,9 +131,9 @@ export default function BrandVoice() {
           <Alert className="mb-6 border-destructive">
             <Lock className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between">
-              <span>Brand Voice is a Pro feature. Upgrade to unlock this capability.</span>
+              <span className="font-medium">Pro Only Feature</span>
               <Button size="sm" asChild>
-                <Link to="/account">Upgrade to Pro</Link>
+                <Link to="/account#promo">Activate Pro to use Brand Voice</Link>
               </Button>
             </AlertDescription>
           </Alert>
@@ -155,7 +158,7 @@ export default function BrandVoice() {
                     placeholder="e.g., Professional LinkedIn, Casual Twitter..."
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || !brandVoiceAllowed}
                     maxLength={50}
                   />
                 </div>
@@ -170,7 +173,7 @@ export default function BrandVoice() {
                         variant="outline"
                         size="sm"
                         onClick={addSample}
-                        disabled={isLoading}
+                        disabled={isLoading || !brandVoiceAllowed}
                       >
                         <Plus className="h-4 w-4 mr-1" />
                         Add Sample
@@ -190,7 +193,7 @@ export default function BrandVoice() {
                             variant="ghost"
                             size="sm"
                             onClick={() => removeSample(index)}
-                            disabled={isLoading}
+                            disabled={isLoading || !brandVoiceAllowed}
                             className="h-6 px-2"
                           >
                             <X className="h-3 w-3" />
@@ -202,7 +205,7 @@ export default function BrandVoice() {
                         placeholder="Paste a sample of your content here (50-2000 characters)..."
                         value={sample}
                         onChange={(e) => updateSample(index, e.target.value)}
-                        disabled={isLoading}
+                        disabled={isLoading || !brandVoiceAllowed}
                         rows={4}
                         className="resize-none text-sm"
                         maxLength={2000}
@@ -212,6 +215,23 @@ export default function BrandVoice() {
                       </p>
                     </div>
                   ))}
+                </div>
+
+                <div className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="default-voice" className="text-base">
+                      Set as default voice
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Use this voice automatically in future generations
+                    </p>
+                  </div>
+                  <Switch
+                    id="default-voice"
+                    checked={setAsDefault}
+                    onCheckedChange={setSetAsDefault}
+                    disabled={!brandVoiceAllowed || isLoading}
+                  />
                 </div>
 
                 {/* Submit Button */}
