@@ -70,7 +70,7 @@ const Landing = () => {
       {/* Hero Section */}
       <section className="pt-32 pb-20 px-4">
         <div className="container mx-auto max-w-6xl text-center">
-          <h2 className="text-5xl md:text-7xl lg:text-8xl font-extrabold mb-8 leading-tight">
+          <h2 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-8 leading-tight">
             {t("landing.hero.title.part1")}
             <br />
             <span className="bg-gradient-primary bg-clip-text text-transparent">{t("landing.hero.title.part2")}</span>
