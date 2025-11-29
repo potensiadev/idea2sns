@@ -14,12 +14,24 @@ export interface LimitsConfig {
   priority_routing: boolean;
 }
 
+export interface BrandVoiceSelection {
+  id: string;
+  voice: {
+    tone: string;
+    sentenceStyle: string;
+    vocabulary: string[];
+    strictness: number;
+    formatTraits?: string[];
+  };
+}
+
 interface AppState {
   user: any | null;
   plan: Plan;
   limits: LimitsConfig;
   dailyUsed: number;
   loading: boolean;
+  brandVoiceSelection: BrandVoiceSelection | null;
   
   // Computed getters
   brandVoiceAllowed: boolean;
@@ -29,6 +41,7 @@ interface AppState {
   
   // Actions
   setUser: (user: any) => void;
+  setBrandVoice: (selection: BrandVoiceSelection | null) => void;
   loadProfileAndLimits: () => Promise<void>;
   loadDailyUsage: () => Promise<void>;
   refreshAfterBilling: () => Promise<void>;
@@ -52,6 +65,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   limits: defaultLimits,
   dailyUsed: 0,
   loading: true,
+  brandVoiceSelection: null,
   
   // Computed getters
   get brandVoiceAllowed() {
@@ -68,6 +82,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   
   setUser: (user) => set({ user }),
+
+  setBrandVoice: (selection) => set({ brandVoiceSelection: selection }),
   
   loadProfileAndLimits: async () => {
     try {
@@ -147,5 +163,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     limits: defaultLimits,
     dailyUsed: 0,
     loading: false,
+    brandVoiceSelection: null,
   }),
 }));
