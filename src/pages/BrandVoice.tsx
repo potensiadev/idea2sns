@@ -13,6 +13,8 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { supabase } from '@/integrations/supabase/client';
+import { UpgradeToProModal } from '@/components/UpgradeToProModal';
 
 interface ExtractedVoice {
   tone: string;
@@ -27,9 +29,15 @@ interface ExtractionResult {
   voice: ExtractedVoice;
 }
 
+interface SavedBrandVoice {
+  id: string;
+  title?: string | null;
+  voice?: ExtractedVoice;
+}
+
 export default function BrandVoice() {
   const navigate = useNavigate();
-  const { brandVoiceAllowed, brandVoiceSelection, setBrandVoice } = useAppStore();
+  const { plan, limits, brandVoiceAllowed, brandVoiceSelection, setBrandVoice } = useAppStore();
   const [title, setTitle] = useState('');
   const [samples, setSamples] = useState<string[]>(['']);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +47,11 @@ export default function BrandVoice() {
       : null
   );
   const [setAsDefault, setSetAsDefault] = useState(!!brandVoiceSelection);
+  const [existingVoices, setExistingVoices] = useState<SavedBrandVoice[]>([]);
+  const [voicesLoading, setVoicesLoading] = useState(false);
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+
+  const brandVoiceEnabled = plan === 'pro' && limits.brand_voice && brandVoiceAllowed;
 
   useEffect(() => {
     if (brandVoiceSelection) {
@@ -48,6 +61,34 @@ export default function BrandVoice() {
       setSetAsDefault(false);
     }
   }, [brandVoiceSelection]);
+
+  useEffect(() => {
+    if (!brandVoiceEnabled) {
+      return;
+    }
+
+    const fetchVoices = async () => {
+      try {
+        setVoicesLoading(true);
+        const { data, error } = await supabase
+          .from('brand_voices')
+          .select('id, title, voice');
+
+        if (error) {
+          console.error('Error loading brand voices', error);
+          return;
+        }
+
+        setExistingVoices((data as SavedBrandVoice[]) || []);
+      } catch (err) {
+        console.error('Error loading brand voices', err);
+      } finally {
+        setVoicesLoading(false);
+      }
+    };
+
+    fetchVoices();
+  }, [brandVoiceEnabled]);
 
   const addSample = () => {
     if (samples.length < 3) {
@@ -70,9 +111,14 @@ export default function BrandVoice() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!brandVoiceEnabled) {
+      setUpgradeModalOpen(true);
+      return;
+    }
+
     // Filter out empty samples and validate
     const validSamples = samples.filter(s => s.trim().length > 0);
-    
+
     if (validSamples.length === 0) {
       toast.error('Please provide at least one sample');
       return;
@@ -109,6 +155,7 @@ export default function BrandVoice() {
         setResult(extraction);
         if (setAsDefault) {
           setBrandVoice({ id: extraction.brandVoiceId, voice: extraction.voice });
+          toast.success('Saved as default brand voice');
         }
         toast.success('Brand voice extracted successfully!');
       } else {
@@ -130,7 +177,7 @@ export default function BrandVoice() {
     setBrandVoice(null);
   };
 
-  if (!brandVoiceAllowed) {
+  if (!brandVoiceEnabled) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
@@ -153,12 +200,17 @@ export default function BrandVoice() {
                     Activate Pro to unlock brand voice extraction and save your voice for future generations.
                   </p>
                 </div>
-                <Button size="lg" onClick={() => navigate('/account#promo')}>
+                <Button size="lg" onClick={() => setUpgradeModalOpen(true)}>
                   Upgrade to Pro / Enter Promo Code
                 </Button>
               </div>
             </CardContent>
           </Card>
+          <UpgradeToProModal
+            open={upgradeModalOpen}
+            onOpenChange={setUpgradeModalOpen}
+            reason="Brand Voice is a Pro Feature"
+          />
         </div>
       </div>
     );
@@ -269,6 +321,7 @@ export default function BrandVoice() {
                       if (result) {
                         if (checked) {
                           setBrandVoice({ id: result.brandVoiceId, voice: result.voice });
+                          toast.success('Saved as default brand voice');
                         } else {
                           setBrandVoice(null);
                         }
@@ -424,7 +477,72 @@ export default function BrandVoice() {
             )}
           </div>
         </div>
+
+        {/* Existing Brand Voices */}
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Saved Brand Voices</h2>
+            {voicesLoading && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <LoadingSpinner size="sm" />
+                Loading
+              </div>
+            )}
+          </div>
+
+          {existingVoices.length === 0 && !voicesLoading && (
+            <Card>
+              <CardContent className="py-6 text-center text-muted-foreground">
+                No saved brand voices yet.
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid md:grid-cols-2 gap-4">
+            {existingVoices.map((voice) => (
+              <Card key={voice.id}>
+                <CardHeader className="space-y-1">
+                  <CardTitle className="text-lg">{voice.title || 'Untitled Voice'}</CardTitle>
+                  <CardDescription className="text-sm">
+                    {voice.voice?.tone || 'No tone provided'}
+                    {voice.voice?.vocabulary?.length
+                      ? ` • ${voice.voice.vocabulary[0]}`
+                      : ''}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-wrap gap-2">
+                    {voice.voice?.vocabulary?.slice(0, 3).map((word, index) => (
+                      <Badge key={index} variant="secondary">
+                        {word}
+                      </Badge>
+                    ))}
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    disabled={!voice.voice}
+                    onClick={() => {
+                      if (!voice.voice) return;
+                      setBrandVoice({ id: voice.id, voice: voice.voice });
+                      setResult({ brandVoiceId: voice.id, voice: voice.voice });
+                      setSetAsDefault(true);
+                      toast.success('Saved as default brand voice');
+                    }}
+                  >
+                    Set as default
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
       </div>
+      <UpgradeToProModal
+        open={upgradeModalOpen}
+        onOpenChange={setUpgradeModalOpen}
+        reason="Brand Voice is a Pro Feature"
+      />
     </div>
   );
 }
