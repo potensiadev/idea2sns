@@ -1,10 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppStore } from '@/store/useAppStore';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Lock, Plus, X, Sparkles, CheckCircle } from 'lucide-react';
+import { Plus, X, Sparkles, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,12 +28,26 @@ interface ExtractionResult {
 }
 
 export default function BrandVoice() {
-  const { brandVoiceAllowed } = useAppStore();
+  const navigate = useNavigate();
+  const { brandVoiceAllowed, brandVoiceSelection, setBrandVoice } = useAppStore();
   const [title, setTitle] = useState('');
   const [samples, setSamples] = useState<string[]>(['']);
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<ExtractionResult | null>(null);
-  const [setAsDefault, setSetAsDefault] = useState(false);
+  const [result, setResult] = useState<ExtractionResult | null>(
+    brandVoiceSelection
+      ? { brandVoiceId: brandVoiceSelection.id, voice: brandVoiceSelection.voice }
+      : null
+  );
+  const [setAsDefault, setSetAsDefault] = useState(!!brandVoiceSelection);
+
+  useEffect(() => {
+    if (brandVoiceSelection) {
+      setResult({ brandVoiceId: brandVoiceSelection.id, voice: brandVoiceSelection.voice });
+      setSetAsDefault(true);
+    } else {
+      setSetAsDefault(false);
+    }
+  }, [brandVoiceSelection]);
 
   const addSample = () => {
     if (samples.length < 3) {
@@ -56,11 +69,6 @@ export default function BrandVoice() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!brandVoiceAllowed) {
-      toast.error('Brand Voice is a Pro feature');
-      return;
-    }
 
     // Filter out empty samples and validate
     const validSamples = samples.filter(s => s.trim().length > 0);
@@ -97,7 +105,11 @@ export default function BrandVoice() {
       }
 
       if (data) {
-        setResult(data as ExtractionResult);
+        const extraction = data as ExtractionResult;
+        setResult(extraction);
+        if (setAsDefault) {
+          setBrandVoice({ id: extraction.brandVoiceId, voice: extraction.voice });
+        }
         toast.success('Brand voice extracted successfully!');
       } else {
         toast.error('Failed to extract brand voice. Please try again.');
@@ -115,7 +127,42 @@ export default function BrandVoice() {
     setSamples(['']);
     setResult(null);
     setSetAsDefault(false);
+    setBrandVoice(null);
   };
+
+  if (!brandVoiceAllowed) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-8 text-center space-y-3">
+            <h1 className="text-3xl font-bold">Brand Voice</h1>
+            <p className="text-muted-foreground">
+              Define and manage your unique brand voice for consistent content
+            </p>
+          </div>
+
+          <Card className="max-w-2xl mx-auto">
+            <CardContent className="py-12">
+              <div className="text-center space-y-6">
+                <div className="p-4 bg-muted rounded-full w-fit mx-auto">
+                  <Sparkles className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div className="space-y-2">
+                  <h2 className="text-xl font-semibold">Brand Voice is a Pro feature.</h2>
+                  <p className="text-muted-foreground">
+                    Activate Pro to unlock brand voice extraction and save your voice for future generations.
+                  </p>
+                </div>
+                <Button size="lg" onClick={() => navigate('/account#promo')}>
+                  Upgrade to Pro / Enter Promo Code
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -127,21 +174,9 @@ export default function BrandVoice() {
           </p>
         </div>
 
-        {!brandVoiceAllowed && (
-          <Alert className="mb-6 border-destructive">
-            <Lock className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between">
-              <span className="font-medium">Pro Only Feature</span>
-              <Button size="sm" asChild>
-                <Link to="/account#promo">Activate Pro to use Brand Voice</Link>
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Input Form */}
-          <Card className={!brandVoiceAllowed ? 'opacity-50 pointer-events-none' : ''}>
+          <Card>
             <CardHeader>
               <CardTitle>Extract Brand Voice</CardTitle>
               <CardDescription>
@@ -220,7 +255,7 @@ export default function BrandVoice() {
                 <div className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-0.5">
                     <Label htmlFor="default-voice" className="text-base">
-                      Set as default voice
+                      Use this as my default voice
                     </Label>
                     <p className="text-sm text-muted-foreground">
                       Use this voice automatically in future generations
@@ -229,8 +264,17 @@ export default function BrandVoice() {
                   <Switch
                     id="default-voice"
                     checked={setAsDefault}
-                    onCheckedChange={setSetAsDefault}
-                    disabled={!brandVoiceAllowed || isLoading}
+                    onCheckedChange={(checked) => {
+                      setSetAsDefault(checked);
+                      if (result) {
+                        if (checked) {
+                          setBrandVoice({ id: result.brandVoiceId, voice: result.voice });
+                        } else {
+                          setBrandVoice(null);
+                        }
+                      }
+                    }}
+                    disabled={isLoading}
                   />
                 </div>
 
@@ -239,7 +283,7 @@ export default function BrandVoice() {
                   type="submit"
                   className="w-full"
                   size="lg"
-                  disabled={!brandVoiceAllowed || isLoading || samples.every(s => !s.trim())}
+                  disabled={isLoading || samples.every(s => !s.trim())}
                 >
                   {isLoading ? (
                     <>

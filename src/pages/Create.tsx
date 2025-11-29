@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -77,7 +77,15 @@ function VariationCard({ style, text }: { style: string; text: string }) {
 }
 
 export default function Create() {
-  const { brandVoiceAllowed, maxPlatforms, maxBlogLength, dailyUsed, limits, loadDailyUsage } = useAppStore();
+  const {
+    brandVoiceAllowed,
+    maxPlatforms,
+    maxBlogLength,
+    dailyUsed,
+    limits,
+    loadDailyUsage,
+    brandVoiceSelection,
+  } = useAppStore();
   
   const [activeTab, setActiveTab] = useState('create');
   
@@ -86,7 +94,7 @@ export default function Create() {
   const [content, setContent] = useState('');
   const [tone, setTone] = useState('');
   const [platforms, setPlatforms] = useState<string[]>([]);
-  const [useBrandVoice, setUseBrandVoice] = useState(false);
+  const [useBrandVoice, setUseBrandVoice] = useState(!!brandVoiceSelection);
   
   // Blog-to-SNS form state
   const [blogSourceType, setBlogSourceType] = useState<'text' | 'url'>('text');
@@ -94,7 +102,7 @@ export default function Create() {
   const [blogContent, setBlogContent] = useState('');
   const [blogTone, setBlogTone] = useState('');
   const [blogPlatforms, setBlogPlatforms] = useState<string[]>([]);
-  const [blogUseBrandVoice, setBlogUseBrandVoice] = useState(false);
+  const [blogUseBrandVoice, setBlogUseBrandVoice] = useState(!!brandVoiceSelection);
   
   // Variations form state
   const [baseText, setBaseText] = useState('');
@@ -108,6 +116,11 @@ export default function Create() {
   const [results, setResults] = useState<GeneratedContent | null>(null);
 
   const isAtDailyLimit = limits.daily_generations !== null && dailyUsed >= limits.daily_generations;
+
+  useEffect(() => {
+    setUseBrandVoice(!!brandVoiceSelection);
+    setBlogUseBrandVoice(!!brandVoiceSelection);
+  }, [brandVoiceSelection]);
   const canGenerate = !isAtDailyLimit && platforms.length > 0 && (topic || content);
 
   const handlePlatformChange = (newPlatforms: string[]) => {
@@ -146,6 +159,11 @@ export default function Create() {
       return;
     }
 
+    if (useBrandVoice && !brandVoiceSelection) {
+      toast.error('Please extract and save a brand voice before enabling this toggle.');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setResults(null);
@@ -156,7 +174,7 @@ export default function Create() {
         content: content || '',
         tone: tone || 'professional',
         platforms,
-        brandVoiceId: useBrandVoice ? null : null, // Will be null for now until brand voice is implemented
+        brandVoiceId: useBrandVoice && brandVoiceSelection ? brandVoiceSelection.id : null,
       });
 
       if (error) {
@@ -235,6 +253,11 @@ export default function Create() {
       return;
     }
 
+    if (blogUseBrandVoice && !brandVoiceSelection) {
+      toast.error('Please extract and save a brand voice before enabling this toggle.');
+      return;
+    }
+
     try {
       setIsLoading(true);
       setResults(null);
@@ -243,7 +266,7 @@ export default function Create() {
         type: 'blog',
         blogContent: contentToProcess,
         platforms: blogPlatforms,
-        brandVoiceId: blogUseBrandVoice ? null : null,
+        brandVoiceId: blogUseBrandVoice && brandVoiceSelection ? brandVoiceSelection.id : null,
       });
 
       if (error) {
@@ -316,7 +339,7 @@ export default function Create() {
       const { data, error } = await edgeFunctions.generateVariations({
         baseText: baseText.trim(),
         styles: selectedStyles,
-        brandVoiceId: null,
+        brandVoiceId: brandVoiceSelection ? brandVoiceSelection.id : null,
       });
 
       if (error) {
