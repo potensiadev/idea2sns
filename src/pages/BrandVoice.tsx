@@ -37,7 +37,7 @@ interface SavedBrandVoice {
 
 export default function BrandVoice() {
   const navigate = useNavigate();
-  const { user, plan, limits, brandVoiceAllowed, brandVoiceSelection, setBrandVoice } = useAppStore();
+  const { plan, limits, brandVoiceAllowed, brandVoiceSelection, setBrandVoice } = useAppStore();
   const [title, setTitle] = useState('');
   const [samples, setSamples] = useState<string[]>(['']);
   const [isLoading, setIsLoading] = useState(false);
@@ -70,29 +70,16 @@ export default function BrandVoice() {
     const fetchVoices = async () => {
       try {
         setVoicesLoading(true);
-        
-        if (!user?.id) {
-          setExistingVoices([]);
-          return;
-        }
-        
         const { data, error } = await supabase
           .from('brand_voices')
-          .select('id, label, extracted_style, created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
+          .select('id, title, voice');
 
         if (error) {
           console.error('Error loading brand voices', error);
-          setExistingVoices([]);
           return;
         }
 
-        setExistingVoices((data || []).map(v => ({ 
-          ...v, 
-          title: v.label, 
-          voice: v.extracted_style as unknown as ExtractedVoice 
-        })) as SavedBrandVoice[]);
+        setExistingVoices((data as SavedBrandVoice[]) || []);
       } catch (err) {
         console.error('Error loading brand voices', err);
       } finally {

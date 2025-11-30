@@ -110,6 +110,7 @@ export default function Create() {
   const [baseText, setBaseText] = useState('');
   const [selectedStyles, setSelectedStyles] = useState<string[]>([]);
   const [variationResults, setVariationResults] = useState<Record<string, string> | null>(null);
+  const [variationUseBrandVoice, setVariationUseBrandVoice] = useState(!!brandVoiceSelection);
   
   // UI state
   const [isLoading, setIsLoading] = useState(false);
@@ -126,8 +127,10 @@ export default function Create() {
   const variationsLimitExceeded = variationsLimit !== null && selectedStyles.length > variationsLimit;
 
   useEffect(() => {
-    setUseBrandVoice(brandVoiceAllowed && !!brandVoiceSelection);
-    setBlogUseBrandVoice(brandVoiceAllowed && !!brandVoiceSelection);
+    const enabled = brandVoiceAllowed && !!brandVoiceSelection;
+    setUseBrandVoice(enabled);
+    setBlogUseBrandVoice(enabled);
+    setVariationUseBrandVoice(enabled);
   }, [brandVoiceAllowed, brandVoiceSelection]);
 
   useEffect(() => {
@@ -438,11 +441,15 @@ export default function Create() {
       return;
     }
 
-    if (limits.variations_per_request !== null && selectedStyles.length > limits.variations_per_request) {
-      setUpgradeReason(
-        `Free users can generate up to ${limits.variations_per_request} variation${limits.variations_per_request === 1 ? '' : 's'} per request.`
-      );
+    if (variationUseBrandVoice && !brandVoiceAllowed) {
+      setUpgradeTitle('Brand Voice is a Pro Feature');
+      setUpgradeReason('Brand Voice is a Pro feature. Activate Pro to enable this toggle.');
       setShowUpgradeModal(true);
+      return;
+    }
+
+    if (variationUseBrandVoice && !brandVoiceSelection) {
+      toast.error('Please extract and save a brand voice before enabling this toggle.');
       return;
     }
 
@@ -450,11 +457,11 @@ export default function Create() {
       setIsLoading(true);
       setVariationResults(null);
 
-        const { data, error } = await edgeFunctions.generateVariations({
-          baseText: baseText.trim(),
-          styles: selectedStyles,
-          brandVoiceId: brandVoiceAllowed ? defaultBrandVoiceId : null,
-        });
+      const { data, error } = await edgeFunctions.generateVariations({
+        baseText: baseText.trim(),
+        styles: selectedStyles,
+        brandVoiceId: brandVoiceAllowed && variationUseBrandVoice ? defaultBrandVoiceId : null,
+      });
 
       if (error) {
         toast.error(error);
@@ -1011,11 +1018,11 @@ export default function Create() {
                         )}
                       </div>
                       <div className="grid gap-3">
-                        {VARIATION_STYLES.map((style) => (
-                          <div
-                            key={style.id}
-                            className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-                            onClick={() => handleStyleToggle(style.id)}
+                    {VARIATION_STYLES.map((style) => (
+                      <div
+                        key={style.id}
+                        className="flex items-start space-x-3 p-3 border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => handleStyleToggle(style.id)}
                           >
                             <Checkbox
                               id={style.id}
@@ -1031,17 +1038,60 @@ export default function Create() {
                               >
                                 {style.label}
                               </Label>
-                              <p className="text-xs text-muted-foreground">
-                                {style.description}
-                              </p>
-                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {style.description}
+                            </p>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
+                  </div>
 
-                    {/* Submit Button */}
-                    <Button
+                  {/* Brand Voice Toggle */}
+                  <div
+                    className={`flex items-center justify-between p-4 border rounded-lg ${!brandVoiceAllowed ? 'opacity-60' : ''}`}
+                    title={!brandVoiceAllowed ? 'Brand Voice is a Pro feature' : undefined}
+                  >
+                    <div className="space-y-0.5">
+                      <Label htmlFor="variation-brand-voice" className="text-base">
+                        Use Brand Voice
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Apply your saved brand voice to generated variations
+                      </p>
+                      {!brandVoiceAllowed && (
+                        <Button
+                          variant="link"
+                          className="px-0 text-primary"
+                          type="button"
+                          onClick={() => {
+                            setUpgradeTitle('Brand Voice is a Pro Feature');
+                            setUpgradeReason('Brand Voice is a Pro feature. Activate Pro to enable this toggle.');
+                            setShowUpgradeModal(true);
+                          }}
+                        >
+                          Activate Pro to use Brand Voice
+                        </Button>
+                      )}
+                    </div>
+                    <Switch
+                      id="variation-brand-voice"
+                      checked={variationUseBrandVoice}
+                      onCheckedChange={(checked) => {
+                        if (!brandVoiceAllowed) {
+                          setUpgradeTitle('Brand Voice is a Pro Feature');
+                          setUpgradeReason('Brand Voice is a Pro feature. Activate Pro to enable this toggle.');
+                          setShowUpgradeModal(true);
+                          return;
+                        }
+                        setVariationUseBrandVoice(checked);
+                      }}
+                      disabled={isLoading || !brandVoiceAllowed}
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <Button
                       type="submit"
                       className="w-full"
                       size="lg"

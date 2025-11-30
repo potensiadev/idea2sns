@@ -78,7 +78,7 @@ export default function Account() {
         setLoadingVoices(true);
         const { data, error } = await supabase
           .from('brand_voices')
-          .select('id, label, extracted_style')
+          .select('id, title, voice_json')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
 
@@ -91,8 +91,8 @@ export default function Account() {
 
         const mapped = (data || []).map((voice) => ({
           id: voice.id,
-          title: voice.label,
-          voice: voice.extracted_style as unknown as ExtractedVoice,
+          title: voice.title,
+          voice: (voice as any).voice_json as ExtractedVoice,
         }));
         setBrandVoices(mapped);
       } catch (err) {
