@@ -72,14 +72,19 @@ export default function BrandVoice() {
         setVoicesLoading(true);
         const { data, error } = await supabase
           .from('brand_voices')
-          .select('id, title, voice');
+          .select('id, label, extracted_style');
 
         if (error) {
           console.error('Error loading brand voices', error);
           return;
         }
 
-        setExistingVoices((data as SavedBrandVoice[]) || []);
+        const mapped = (data || []).map((voice: any) => ({
+          id: voice.id,
+          label: voice.label,
+          voice: voice.extracted_style,
+        }));
+        setExistingVoices(mapped);
       } catch (err) {
         console.error('Error loading brand voices', err);
       } finally {

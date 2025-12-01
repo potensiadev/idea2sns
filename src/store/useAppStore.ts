@@ -197,14 +197,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     await get().loadDailyUsage();
   },
   
-  reset: () => set({
-    user: null,
-    plan: 'free',
-    limits: defaultLimits,
-    dailyUsed: 0,
-    loading: false,
-    brandVoiceSelection: null,
-  }, () => {
+  reset: () => {
     try {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('defaultBrandVoiceSelection');
@@ -212,5 +205,14 @@ export const useAppStore = create<AppState>((set, get) => ({
     } catch (err) {
       console.error('Failed to clear stored brand voice selection', err);
     }
-  }),
+    
+    set({
+      user: null,
+      plan: 'free',
+      limits: defaultLimits,
+      dailyUsed: 0,
+      loading: false,
+      brandVoiceSelection: null,
+    });
+  },
 }));

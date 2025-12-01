@@ -1,10 +1,7 @@
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 
 export async function runSupabaseDiagnostics() {
   console.log("🚀 Running OneSNS Supabase Diagnostics...");
-
-  const versionTest = await supabase.rpc("version").catch(() => null);
-  console.log("DB version:", versionTest);
 
   console.log("Env:", {
     url: import.meta.env.VITE_SUPABASE_URL,
@@ -25,7 +22,7 @@ export async function runSupabaseDiagnostics() {
   const { data: profile, error: profileErr } = await supabase
     .from("profiles")
     .select("*")
-    .eq("user_id", userRes.data.user.id)
+    .eq("id", userRes.data.user.id)
     .single();
 
   console.log("Profile:", profile, profileErr);
