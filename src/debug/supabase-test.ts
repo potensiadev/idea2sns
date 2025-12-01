@@ -39,8 +39,8 @@ export async function runSupabaseDiagnostics() {
 
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
+      .select("id, email, full_name, avatar_url, plan, limits")
+      .eq("id", user.id)
       .maybeSingle();
 
     console.log("profiles.select:", { profile, profileErr });
