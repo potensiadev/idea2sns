@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
  * - Checks env (URL, anon key)
  * - Validates session + user
  * - Reads profiles table with RLS applied
- * - Reads subscriptions, brand_voices, usage_events
+ * - Reads brand_voices, usage_events
  * - Optional: Calls sample edge function
  */
 export async function runSupabaseDiagnostics() {
@@ -60,9 +60,9 @@ export async function runSupabaseDiagnostics() {
 
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("*")
-      .eq("user_id", user.id) // FIXED: correct PK
-      .single();
+      .select("id, email, full_name, avatar_url, plan, limits")
+      .eq("id", user.id)
+      .maybeSingle();
 
     console.log("profiles.select:", { profile, profileErr });
 
@@ -71,27 +71,14 @@ export async function runSupabaseDiagnostics() {
     console.groupEnd();
 
     // ---------------------------------------------------------
-    // SUBSCRIPTIONS TABLE CHECK
-    // ---------------------------------------------------------
-    console.group("💳 Subscriptions Table");
-
-    const { data: sub, error: subErr } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    console.log("subscriptions:", { sub, subErr });
-    if (subErr) console.error("❌ subscription RLS error:", subErr);
-
-    console.groupEnd();
-
-    // ---------------------------------------------------------
     // BRAND VOICES TABLE CHECK
     // ---------------------------------------------------------
     console.group("🎤 Brand Voices");
 
-    const { data: voices, error: voicesErr } = await supabase.from("brand_voices").select("*").eq("user_id", user.id);
+    const { data: voices, error: voicesErr } = await supabase
+      .from("brand_voices")
+      .select("id, user_id, label, extracted_style, created_at, updated_at")
+      .eq("user_id", user.id);
 
     console.log("brand_voices:", { voices, voicesErr });
 
@@ -106,7 +93,7 @@ export async function runSupabaseDiagnostics() {
 
     const { data: usage, error: usageErr } = await supabase
       .from("usage_events")
-      .select("*")
+      .select("id, user_id, event_type, meta, created_at")
       .eq("user_id", user.id)
       .limit(5);
 
