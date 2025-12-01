@@ -46,6 +46,7 @@ const TYPE_OPTIONS = [
 ];
 
 export default function History() {
+  const { limits } = useAppStore();
   const [isLoading, setIsLoading] = useState(false);
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [total, setTotal] = useState(0);
