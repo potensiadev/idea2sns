@@ -6,10 +6,16 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { jsonError, jsonOk } from "../_shared/errors.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { BrandVoice, promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
-import { createSupabaseClient, getAuthenticatedUser } from "../_shared/supabaseClient.ts";
-import { platformEnum, platformRules, type Platform } from "../_shared/platformRules.ts";
+import {
+  createSupabaseClient,
+  getAuthenticatedUser,
+} from "../_shared/supabaseClient.ts";
+import {
+  platformEnum,
+  platformRules,
+  type Platform,
+} from "../_shared/platformRules.ts";
 import { usageGuard } from "../_shared/usageGuard.ts";
-import { aiRouter } from "../_shared/aiRouter.ts";
 
 /* -----------------------------------------------------
  * Request Schema
@@ -79,6 +85,106 @@ function parsePosts(raw: string, requestedPlatforms: Platform[]) {
         error instanceof Error ? error.message : String(error)
       } | Raw: ${raw}`,
     );
+  }
+}
+
+/* -----------------------------------------------------
+ * AI Providers (OpenAI → Anthropic fallback)
+ * --------------------------------------------------- */
+
+// JSON Repair: AI가 잘못된 JSON을 반환한 경우 대비
+function tryJsonRepair(text: string): string {
+  // 1) trim
+  let fixed = text.trim();
+
+  // 2) 백틱 제거
+  if (fixed.startsWith("```")) {
+    fixed = fixed.replace(/```json/i, "").replace(/```/g, "").trim();
+  }
+
+  // 3) 문자열이 JSON 객체로 시작하지 않을 시 보정
+  const firstBrace = fixed.indexOf("{");
+  if (firstBrace > 0) {
+    fixed = fixed.slice(firstBrace);
+  }
+
+  return fixed;
+}
+
+async function callOpenAI(promptText: string): Promise<string | null> {
+  const key = Deno.env.get("OPENAI_API_KEY");
+  if (!key) return null;
+
+  try {
+    const res = await fetch(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${key}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4.1-mini",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are an SNS post generator. Always return STRICT JSON ONLY. No markdown.",
+            },
+            { role: "user", content: promptText },
+          ],
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      console.error("[OpenAI Error]", await res.text());
+      return null;
+    }
+
+    const data = await res.json();
+    const content =
+      data?.choices?.[0]?.message?.content || null;
+
+    return content ? tryJsonRepair(content) : null;
+  } catch (err) {
+    console.error("[OpenAI Exception]", err);
+    return null;
+  }
+}
+
+async function callAnthropic(promptText: string): Promise<string | null> {
+  const key = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!key) return null;
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-3-5-sonnet-latest",
+        max_tokens: 2048,
+        messages: [{ role: "user", content: promptText }],
+      }),
+    });
+
+    if (!res.ok) {
+      console.error("[Anthropic Error]", await res.text());
+      return null;
+    }
+
+    const data = await res.json();
+    const content = data?.content?.[0]?.text || null;
+
+    return content ? tryJsonRepair(content) : null;
+  } catch (err) {
+    console.error("[Anthropic Exception]", err);
+    return null;
   }
 }
 
@@ -165,35 +271,32 @@ async function handler(req: Request) {
           brandVoiceId: payload.brandVoiceId ?? null,
         };
 
-    const prompt = promptBuilder({ request: singleRequest, platformRules: rulesForOne, brandVoice });
+    const prompt = promptBuilder({
+      request: singleRequest,
+      platformRules: rulesForOne,
+      brandVoice,
+    });
 
-    let aiResult;
-    try {
-      aiResult = await aiRouter.generate({
-        systemPrompt: "You are an SNS post generator. Always return STRICT JSON ONLY. No markdown.",
-        userPrompt: prompt,
-        platform: platform,
-      });
-    } catch (error) {
-      console.error("AI provider error", error);
-      return jsonError(
-        "PROVIDER_ERROR",
-        "All AI providers failed",
-        502,
-        error instanceof Error ? error.message : String(error),
-      );
+    // Try OpenAI → fallback to Anthropic
+    let aiContent = await callOpenAI(prompt);
+    if (!aiContent) {
+      aiContent = await callAnthropic(prompt);
+    }
+
+    if (!aiContent) {
+      return jsonError("PROVIDER_ERROR", "All AI providers failed", 502);
     }
 
     try {
-      const parsed = parsePosts(aiResult.text, [platform]);
+      const parsed = parsePosts(aiContent, [platform]);
       posts[platform] = parsed[platform]!;
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error("JSON Parse Error:", err);
       return jsonError(
         "PROVIDER_ERROR",
         "AI response could not be parsed",
         502,
-        error instanceof Error ? error.message : String(error),
+        err instanceof Error ? err.message : String(err),
       );
     }
   }
