@@ -34,10 +34,10 @@ try {
 // ---- FIXED VERSION (Auth session persists correctly) ----
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage, // persist across reload
-    persistSession: true, // REQUIRED for SPA
-    autoRefreshToken: true, // Refresh expired access_tokens
-    detectSessionInUrl: true, // REQUIRED — parses access_token on redirect
-    flowType: "pkce", // OAuth safest & required in many SPAs
-  },
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+  }
 });
