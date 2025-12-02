@@ -111,9 +111,17 @@ function tryJsonRepair(text: string): string {
   return fixed;
 }
 
-async function callOpenAI(promptText: string): Promise<string | null> {
+type Provider = "openai" | "anthropic";
+
+type ProviderSuccess = { ok: true; provider: Provider; content: string };
+type ProviderError = { ok: false; provider: Provider; status: number; error: string };
+type ProviderResult = ProviderSuccess | ProviderError;
+
+async function callOpenAI(promptText: string): Promise<ProviderResult> {
   const key = Deno.env.get("OPENAI_API_KEY");
-  if (!key) return null;
+  if (!key) {
+    return { ok: false, provider: "openai", status: 0, error: "Missing OPENAI_API_KEY" };
+  }
 
   try {
     const res = await fetch(
@@ -126,6 +134,8 @@ async function callOpenAI(promptText: string): Promise<string | null> {
         },
         body: JSON.stringify({
           model: "gpt-4.1-mini",
+          max_tokens: 1024,
+          response_format: { type: "json_object" },
           messages: [
             {
               role: "system",
@@ -139,24 +149,32 @@ async function callOpenAI(promptText: string): Promise<string | null> {
     );
 
     if (!res.ok) {
-      console.error("[OpenAI Error]", await res.text());
-      return null;
+      const body = await res.text();
+      const error = body.slice(0, 500);
+      console.error(`[OpenAI Error] status=${res.status} body=${error}`);
+      return { ok: false, provider: "openai", status: res.status, error };
     }
 
     const data = await res.json();
-    const content =
-      data?.choices?.[0]?.message?.content || null;
+    const content = data?.choices?.[0]?.message?.content || null;
 
-    return content ? tryJsonRepair(content) : null;
+    if (!content) {
+      return { ok: false, provider: "openai", status: res.status, error: "Empty response content" };
+    }
+
+    return { ok: true, provider: "openai", content: tryJsonRepair(content) };
   } catch (err) {
-    console.error("[OpenAI Exception]", err);
-    return null;
+    const error = String(err);
+    console.error("[OpenAI Exception]", error);
+    return { ok: false, provider: "openai", status: 0, error };
   }
 }
 
-async function callAnthropic(promptText: string): Promise<string | null> {
+async function callAnthropic(promptText: string): Promise<ProviderResult> {
   const key = Deno.env.get("ANTHROPIC_API_KEY");
-  if (!key) return null;
+  if (!key) {
+    return { ok: false, provider: "anthropic", status: 0, error: "Missing ANTHROPIC_API_KEY" };
+  }
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -168,24 +186,78 @@ async function callAnthropic(promptText: string): Promise<string | null> {
       },
       body: JSON.stringify({
         model: "claude-3-5-sonnet-latest",
-        max_tokens: 2048,
-        messages: [{ role: "user", content: promptText }],
+        max_tokens: 1024,
+        messages: [
+          {
+            role: "system",
+            content: [
+              { type: "text", text: "Always respond with a strict JSON object only, no markdown." },
+            ],
+          },
+          { role: "user", content: [{ type: "text", text: promptText }] },
+        ],
       }),
     });
 
     if (!res.ok) {
-      console.error("[Anthropic Error]", await res.text());
-      return null;
+      const body = await res.text();
+      const error = body.slice(0, 500);
+      console.error(`[Anthropic Error] status=${res.status} body=${error}`);
+      return { ok: false, provider: "anthropic", status: res.status, error };
     }
 
     const data = await res.json();
     const content = data?.content?.[0]?.text || null;
 
-    return content ? tryJsonRepair(content) : null;
+    if (!content) {
+      return { ok: false, provider: "anthropic", status: res.status, error: "Empty response content" };
+    }
+
+    return { ok: true, provider: "anthropic", content: tryJsonRepair(content) };
   } catch (err) {
-    console.error("[Anthropic Exception]", err);
-    return null;
+    const error = String(err);
+    console.error("[Anthropic Exception]", error);
+    return { ok: false, provider: "anthropic", status: 0, error };
   }
+}
+
+async function withRetry(
+  provider: Provider,
+  fn: () => Promise<ProviderResult>,
+  attempts = 2,
+): Promise<ProviderResult> {
+  let lastResult: ProviderResult | null = null;
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const result = await fn();
+    lastResult = result;
+
+    if (result.ok) return result;
+
+    const shouldRetry =
+      result.status === 429 || (result.status >= 500 && result.status < 600);
+
+    if (!shouldRetry || attempt === attempts) {
+      return result;
+    }
+
+    console.warn(`[${provider} Retry] attempt ${attempt} failed with status ${result.status}`);
+  }
+
+  return lastResult!;
+}
+
+async function generateWithFallback(promptText: string): Promise<string> {
+  const openaiResult = await withRetry("openai", () => callOpenAI(promptText));
+  if (openaiResult.ok) return openaiResult.content;
+
+  const anthropicResult = await withRetry("anthropic", () => callAnthropic(promptText));
+  if (anthropicResult.ok) return anthropicResult.content;
+
+  throw new Error(JSON.stringify({
+    openai: { status: openaiResult.status, error: openaiResult.error },
+    anthropic: { status: anthropicResult.status, error: anthropicResult.error },
+  }));
 }
 
 /* -----------------------------------------------------
@@ -277,14 +349,17 @@ async function handler(req: Request) {
       brandVoice,
     });
 
-    // Try OpenAI → fallback to Anthropic
-    let aiContent = await callOpenAI(prompt);
-    if (!aiContent) {
-      aiContent = await callAnthropic(prompt);
-    }
-
-    if (!aiContent) {
-      return jsonError("PROVIDER_ERROR", "All AI providers failed", 502);
+    let aiContent: string;
+    try {
+      aiContent = await generateWithFallback(prompt);
+    } catch (err) {
+      console.error("Provider Error:", err);
+      return jsonError(
+        "PROVIDER_ERROR",
+        "All AI providers failed",
+        502,
+        err instanceof Error ? err.message : String(err),
+      );
     }
 
     try {
