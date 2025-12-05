@@ -1,4 +1,5 @@
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/config/supabase";
 
 export async function runSupabaseDiagnostics() {
   console.group("🔎 OneSNS.ai Supabase Diagnostics");
@@ -9,7 +10,7 @@ export async function runSupabaseDiagnostics() {
     // ======================================================
     console.group("🌐 Supabase Configuration");
     console.log("SUPABASE_URL:", SUPABASE_URL);
-    console.log("SUPABASE_ANON_KEY present:", !!SUPABASE_PUBLISHABLE_KEY);
+    console.log("SUPABASE_ANON_KEY present:", !!SUPABASE_ANON_KEY);
     console.groupEnd();
 
     // ======================================================
@@ -39,8 +40,8 @@ export async function runSupabaseDiagnostics() {
 
     const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("id, email, full_name, avatar_url, plan, limits")
-      .eq("id", user.id)
+      .select("user_id, email, full_name, avatar_url, plan, limits")
+      .eq("user_id", user.id)
       .maybeSingle();
 
     console.log("profiles.select:", { profile, profileErr });
