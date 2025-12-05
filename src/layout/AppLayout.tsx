@@ -62,7 +62,7 @@ export const AppLayout = () => {
           <div className="flex items-center gap-6">
             <Link to="/create" className="flex items-center gap-2 font-bold text-xl">
               <Sparkles className="h-6 w-6 text-primary" />
-              <span>OneSNS</span>
+              <span>idea2sns</span>
             </Link>
             
             <nav className="hidden md:flex items-center gap-4">

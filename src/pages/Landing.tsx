@@ -52,7 +52,7 @@ const Landing = () => {
             <div className="p-2 bg-gradient-primary rounded-lg">
               <Sparkles className="h-6 w-6 text-white" />
             </div>
-            <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">OneSNS.ai</span>
+            <span className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">idea2sns</span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -234,10 +234,10 @@ const Landing = () => {
               <div className="p-2 bg-gradient-primary rounded-lg">
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
-              <span className="text-xl font-bold">OneSNS.ai</span>
+              <span className="text-xl font-bold">idea2sns</span>
             </div>
 
-            <div className="text-sm text-muted-foreground">© 2024 OneSNS.ai. {t("landing.footer.rights")}</div>
+            <div className="text-sm text-muted-foreground">© 2025 idea2sns. {t("landing.footer.rights")}</div>
           </div>
         </div>
       </footer>

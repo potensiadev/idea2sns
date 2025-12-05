@@ -7,8 +7,8 @@ function getEnv(key: string): string | null {
   return (import.meta as any).env?.[key] ?? null;
 }
 
-export const SUPABASE_URL = getEnv("VITE_ONESNS_SUPABASE_URL") || PROJECT_SUPABASE_URL;
-export const SUPABASE_ANON_KEY = getEnv("VITE_ONESNS_SUPABASE_ANON_KEY") || PROJECT_SUPABASE_ANON_KEY;
+export const SUPABASE_URL = getEnv("VITE_SUPABASE_URL") || PROJECT_SUPABASE_URL;
+export const SUPABASE_ANON_KEY = getEnv("VITE_SUPABASE_ANON_KEY") || PROJECT_SUPABASE_ANON_KEY;
 
 export function createSupabaseBrowserConfig() {
   return {

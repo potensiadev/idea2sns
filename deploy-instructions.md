@@ -1,4 +1,4 @@
-# Edge Function 수동 배포 가이드
+# Netlify + Supabase 배포 가이드
 
 ## 1. Supabase Dashboard 접속
 https://supabase.com/dashboard/project/puaexonyrdgvalcovidb/functions
@@ -31,6 +31,11 @@ Settings → Edge Functions → Environment Variables
 - 간단 입력 탭 테스트
 - 블로그 변환 탭 테스트
 
-## 참고: Lovable이 자동 배포를 하지 않는 경우
+## 6. Netlify 프론트엔드 배포
 
-Lovable은 프론트엔드 코드만 자동 배포하고, Edge Functions는 수동 설정이 필요할 수 있습니다.
+1. Netlify에 GitHub 저장소 연결
+2. Build settings:
+   - Build command: `npm run build`
+   - Publish directory: `dist`
+3. Environment variables에 Supabase 키 설정
+4. Custom domain: idea2sns.space 연결

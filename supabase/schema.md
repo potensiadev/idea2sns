@@ -1,4 +1,4 @@
-# Supabase Schema — OneSNS.ai MVP
+# Supabase Schema — idea2sns MVP
 
 This schema captures the minimum tables, relationships, and RLS needed to support the MVP features (multi-platform generation, variations, blog repurposing, brand voice, limits, and history).
 

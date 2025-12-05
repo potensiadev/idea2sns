@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/config/supabase";
 
 export async function runSupabaseDiagnostics() {
-  console.group("🔎 OneSNS.ai Supabase Diagnostics");
+  console.group("🔎 idea2sns Supabase Diagnostics");
 
   try {
     // ======================================================
