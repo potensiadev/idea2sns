@@ -1,15 +1,15 @@
-import { supabase } from "@/integrations/supabase/client";
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, supabase } from "@/integrations/supabase/client";
 
 export async function runSupabaseDiagnostics() {
   console.group("🔎 OneSNS.ai Supabase Diagnostics");
 
   try {
     // ======================================================
-    // 1) ENV
+    // 1) Supabase Configuration (hardcoded override)
     // ======================================================
-    console.group("🌐 Environment Variables");
-    console.log("VITE_SUPABASE_URL:", import.meta.env.VITE_SUPABASE_URL);
-    console.log("VITE_SUPABASE_ANON_KEY present:", !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+    console.group("🌐 Supabase Configuration");
+    console.log("SUPABASE_URL:", SUPABASE_URL);
+    console.log("SUPABASE_ANON_KEY present:", !!SUPABASE_PUBLISHABLE_KEY);
     console.groupEnd();
 
     // ======================================================
@@ -76,7 +76,7 @@ export async function runSupabaseDiagnostics() {
     console.group("⚙️ Edge Function CORS Tests");
 
     async function testEdge(functionName: string, payload: any) {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${functionName}`;
+      const url = `${SUPABASE_URL}/functions/v1/${functionName}`;
 
       try {
         const res = await fetch(url, {
