@@ -5,7 +5,7 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 import { jsonError, jsonOk } from "../_shared/errors.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { BrandVoice, promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
+import { promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
 import {
   createSupabaseClient,
   getAuthenticatedUser,
@@ -21,45 +21,27 @@ import { usageGuard } from "../_shared/usageGuard.ts";
  * Request Schema
  * --------------------------------------------------- */
 const requestSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: z.literal("simple"),
-    topic: z.string().min(1),
-    content: z.string().min(1),
-    tone: z.string().min(1),
-    platforms: z.array(platformEnum).min(1),
-    brandVoiceId: z.string().uuid().nullable().optional(),
-  }),
+  z
+    .object({
+      type: z.literal("simple"),
+      topic: z.string().max(200).optional(),
+      content: z.string().max(3000).optional(),
+      tone: z.string().min(1),
+      platforms: z.array(platformEnum).min(1).max(3),
+    })
+    .superRefine((val, ctx) => {
+      const hasTopic = Boolean(val.topic && val.topic.trim());
+      const hasContent = Boolean(val.content && val.content.trim());
+      if (!hasTopic && !hasContent) {
+        ctx.addIssue({ code: "custom", message: "Either topic or content must be provided", path: ["topic"] });
+      }
+    }),
   z.object({
     type: z.literal("blog"),
     blogContent: z.string().min(1),
-    platforms: z.array(platformEnum).min(1),
-    brandVoiceId: z.string().uuid().nullable().optional(),
+    platforms: z.array(platformEnum).min(1).max(3),
   }),
 ]);
-
-/* -----------------------------------------------------
- * Brand Voice Loader
- * --------------------------------------------------- */
-async function resolveBrandVoice(
-  supabase: SupabaseClient,
-  userId: string,
-  brandVoiceId?: string | null,
-): Promise<BrandVoice> {
-  if (!brandVoiceId) return null;
-
-  const { data, error } = await supabase
-    .from("brand_voices")
-    .select("extracted_style,label")
-    .eq("id", brandVoiceId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Failed to load brand voice: ${error.message}`);
-  }
-
-  return data ?? null;
-}
 
 /* -----------------------------------------------------
  * AI Output Parsing (Platform JSON)
@@ -302,27 +284,13 @@ async function handler(req: Request) {
         platformCount: payload.platforms.length,
         blogLength: payload.type === "blog"
           ? payload.blogContent.length
-          : undefined,
-        brandVoiceRequested: Boolean(payload.brandVoiceId),
+          : (payload.content ?? "").length,
       },
     );
   } catch (err) {
     if (err instanceof Response) return err;
     console.error("Usage guard error:", err);
     return jsonError("INTERNAL_ERROR", "Failed to enforce usage limits", 500);
-  }
-
-  // -------- BRAND VOICE -------- //
-  let brandVoice: BrandVoice = null;
-  try {
-    brandVoice = await resolveBrandVoice(
-      supabase,
-      user.id,
-      payload.brandVoiceId ?? null,
-    );
-  } catch (err) {
-    console.error(err);
-    return jsonError("INTERNAL_ERROR", "Failed to load brand voice", 500);
   }
 
   // -------- AI GENERATION -------- //
@@ -335,18 +303,16 @@ async function handler(req: Request) {
 
     const singleRequest: RequestShape =
       payload.type === "simple"
-        ? { ...payload, platforms: [platform] }
+        ? { ...payload, content: payload.content ?? "", topic: payload.topic ?? "", platforms: [platform] }
         : {
           type: "blog",
           blogContent: payload.blogContent,
           platforms: [platform],
-          brandVoiceId: payload.brandVoiceId ?? null,
         };
 
     const prompt = promptBuilder({
       request: singleRequest,
       platformRules: rulesForOne,
-      brandVoice,
     });
 
     let aiContent: string;

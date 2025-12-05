@@ -64,22 +64,18 @@ describe('Plan gating', () => {
       limits: DEFAULT_LIMITS,
       dailyUsed: 0,
       loading: false,
-      brandVoiceSelection: null,
     }));
   });
 
-  it('allows pro users to select all six platforms and use brand voice', async () => {
+  it('allows pro users to select all three platforms', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'pro-user' } } });
     setProfileResponse({
       plan: 'pro',
       limits: {
         daily_generations: null,
-        max_platforms_per_request: 6,
-        brand_voice: true,
+        max_platforms_per_request: 3,
         blog_to_sns: true,
         max_blog_length: null,
-        variations_per_request: null,
-        history_limit: null,
         priority_routing: true,
       },
     });
@@ -87,27 +83,25 @@ describe('Plan gating', () => {
     await useAppStore.getState().loadProfileAndLimits();
 
     expect(useAppStore.getState().plan).toBe('pro');
-    expect(useAppStore.getState().maxPlatforms).toBe(6);
-    expect(useAppStore.getState().brandVoiceAllowed).toBe(true);
+    expect(useAppStore.getState().maxPlatforms).toBe(3);
 
     renderSelectorWithState(useAppStore.getState().maxPlatforms);
 
-    ['Facebook', 'Instagram', 'LinkedIn', 'Twitter', 'Threads', 'YouTube'].forEach((label) => {
+    ['Twitter (X)', 'LinkedIn', 'Threads'].forEach((label) => {
       fireEvent.click(screen.getByText(label));
     });
 
-    expect(screen.getByText('6/6 selected')).toBeTruthy();
-    expect(screen.getByText('YouTube').closest('button')?.disabled).toBeFalsy();
+    expect(screen.getByText('3/3 selected')).toBeTruthy();
+    expect(screen.getByText('Threads').closest('button')?.disabled).toBeFalsy();
   });
 
-  it('blocks free users from exceeding one platform and disables brand voice', async () => {
+  it('blocks free users from exceeding one platform', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'free-user' } } });
     setProfileResponse({
       plan: 'free',
       limits: {
         ...DEFAULT_LIMITS,
         max_platforms_per_request: 1,
-        brand_voice: false,
       },
     });
 
@@ -115,14 +109,13 @@ describe('Plan gating', () => {
 
     expect(useAppStore.getState().plan).toBe('free');
     expect(useAppStore.getState().maxPlatforms).toBe(1);
-    expect(useAppStore.getState().brandVoiceAllowed).toBe(false);
 
     renderSelectorWithState(useAppStore.getState().maxPlatforms);
 
-    fireEvent.click(screen.getByText('Facebook'));
-    fireEvent.click(screen.getByText('Instagram'));
+    fireEvent.click(screen.getByText('Twitter (X)'));
+    fireEvent.click(screen.getByText('LinkedIn'));
 
-    expect(screen.getByText('1/6 selected')).toBeTruthy();
-    expect((screen.getByText('Instagram').closest('button') as HTMLButtonElement)?.disabled).toBe(true);
+    expect(screen.getByText('1/3 selected')).toBeTruthy();
+    expect((screen.getByText('LinkedIn').closest('button') as HTMLButtonElement)?.disabled).toBe(true);
   });
 });

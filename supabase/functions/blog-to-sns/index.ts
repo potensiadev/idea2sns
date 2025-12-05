@@ -5,7 +5,7 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { aiRouter } from "../_shared/aiRouter.ts";
 import { jsonError, jsonOk } from "../_shared/errors.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { BrandVoice, promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
+import { promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
 import { createSupabaseClient, getAuthenticatedUser } from "../_shared/supabaseClient.ts";
 import { platformEnum, platformModelMap, platformRules, type Platform } from "../_shared/platformRules.ts";
 import { usageGuard } from "../_shared/usageGuard.ts";
@@ -15,9 +15,8 @@ const requestSchema = z
     sourceType: z.enum(["url", "text"]),
     url: z.string().url().optional(),
     blogContent: z.string().min(1).optional(),
-    platforms: z.array(platformEnum).min(1).max(5),
+    platforms: z.array(platformEnum).min(1).max(3),
     tone: z.string().min(1).optional(),
-    brandVoiceId: z.string().uuid().nullable().optional(),
   })
   .superRefine((val, ctx) => {
     if (val.sourceType === "url" && !val.url) {
@@ -27,27 +26,6 @@ const requestSchema = z
       ctx.addIssue({ code: "custom", message: "blogContent is required when sourceType is 'text'" });
     }
   });
-
-async function resolveBrandVoice(
-  supabase: SupabaseClient,
-  userId: string,
-  brandVoiceId?: string | null,
-): Promise<BrandVoice> {
-  if (!brandVoiceId) return null;
-
-  const { data, error } = await supabase
-    .from("brand_voices")
-    .select("extracted_style,label")
-    .eq("id", brandVoiceId)
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (error) {
-    throw new Error(`Failed to load brand voice: ${error.message}`);
-  }
-
-  return data ?? null;
-}
 
 function parsePosts(raw: string, requestedPlatforms: Platform[]) {
   try {
@@ -132,7 +110,6 @@ async function handler(req: Request) {
       await usageGuard(supabase, user.id, "blog_to_sns", {
         platformCount: payload.platforms.length,
         blogLength: sourceContent.length,
-        brandVoiceRequested: Boolean(payload.brandVoiceId),
       });
     } catch (error) {
       if (error instanceof Response) {
@@ -140,14 +117,6 @@ async function handler(req: Request) {
       }
       console.error("Usage guard error", error);
       return jsonError("INTERNAL_ERROR", "Failed to enforce usage limits", 500);
-    }
-
-    let brandVoice: BrandVoice = null;
-    try {
-      brandVoice = await resolveBrandVoice(supabase, user.id, payload.brandVoiceId ?? null);
-    } catch (error) {
-      console.error(error);
-      return jsonError("INTERNAL_ERROR", "Failed to load brand voice", 500);
     }
 
     let summary = sourceContent;
@@ -181,10 +150,9 @@ async function handler(req: Request) {
         type: "blog",
         blogContent: payload.tone ? `Tone hint: ${payload.tone}\n\n${summary}` : summary,
         platforms: [platform],
-        brandVoiceId: payload.brandVoiceId ?? null,
       };
 
-      const generationPrompt = promptBuilder({ request: requestShape, platformRules: rules, brandVoice });
+      const generationPrompt = promptBuilder({ request: requestShape, platformRules: rules });
 
       let aiResult;
       try {
