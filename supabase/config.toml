@@ -1,0 +1,4 @@
+project_id = "voalboudivbezmjlzicd"
+
+[functions.generate-post]
+verify_jwt = true
