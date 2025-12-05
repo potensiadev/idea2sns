@@ -3,30 +3,16 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-
-// Validate required environment variables
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  const missing = [];
-  if (!SUPABASE_URL) missing.push("VITE_SUPABASE_URL");
-  if (!SUPABASE_PUBLISHABLE_KEY) missing.push("VITE_SUPABASE_PUBLISHABLE_KEY");
-
-  throw new Error(
-    `Missing required Supabase environment variables: ${missing.join(", ")}\n\n` +
-      "Please ensure your .env file contains:\n" +
-      "- VITE_SUPABASE_URL=https://your-project.supabase.co\n" +
-      "- VITE_SUPABASE_PUBLISHABLE_KEY=your-anon-key\n\n" +
-      "See .env.example for a template.",
-  );
-}
+export const SUPABASE_URL = "https://voalboudivbezmjlzicd.supabase.co";
+export const SUPABASE_PUBLISHABLE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvYWxib3VkaXZiZXptamx6aWNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1MTg0NTksImV4cCI6MjA4MDA5NDQ1OX0.tB_kktKJ50umNOQApC5uWNVFaxa4a8f4iM4R64F37JY";
 
 // Validate URL format
 try {
   new URL(SUPABASE_URL);
 } catch (error) {
   throw new Error(
-    `Invalid VITE_SUPABASE_URL format: "${SUPABASE_URL}"\n` +
+    `Invalid Supabase URL format: "${SUPABASE_URL}"\n` +
       "Expected a valid URL like: https://your-project.supabase.co",
   );
 }
