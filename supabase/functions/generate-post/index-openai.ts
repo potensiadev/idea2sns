@@ -1,11 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { createSupabaseClient } from "../_shared/supabaseClient.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const simpleGenerateSchema = z
   .object({
@@ -70,13 +66,18 @@ const PLATFORM_PROMPTS = {
 - Invite conversation without being salesy`,
 };
 
-const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+const jsonResponse = (
+  corsHeaders: HeadersInit,
+  body: Record<string, unknown>,
+  status = 200
+) =>
   new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -85,7 +86,7 @@ serve(async (req) => {
     // Verify authentication
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return jsonResponse({ error: "Missing authorization header" }, 401);
+      return jsonResponse(corsHeaders, { error: "Missing authorization header" }, 401);
     }
 
     let supabase;
@@ -93,7 +94,7 @@ serve(async (req) => {
       supabase = createSupabaseClient(req);
     } catch (error) {
       console.error("Supabase configuration error", error);
-      return jsonResponse({ error: "Server configuration error" }, 500);
+      return jsonResponse(corsHeaders, { error: "Server configuration error" }, 500);
     }
 
     const {
@@ -103,6 +104,7 @@ serve(async (req) => {
 
     if (userError || !user) {
       return jsonResponse(
+        corsHeaders,
         { error: "Invalid or expired authentication token" },
         403
       );
@@ -115,6 +117,7 @@ serve(async (req) => {
     if (!validationResult.success) {
       console.error("Validation error:", validationResult.error);
       return jsonResponse(
+        corsHeaders,
         {
           error: "Invalid request data",
           details: validationResult.error.flatten(),
@@ -217,6 +220,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
 
         if (result.error) {
           return jsonResponse(
+            corsHeaders,
             { error: result.error },
             result.status
           );
@@ -259,6 +263,7 @@ Provide a structured summary in JSON format:
 
       if (analysisResult.error) {
         return jsonResponse(
+          corsHeaders,
           { error: analysisResult.error },
           analysisResult.status
         );
@@ -315,6 +320,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
 
         if (result.error) {
           return jsonResponse(
+            corsHeaders,
             { error: result.error },
             result.status
           );
@@ -326,10 +332,11 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
 
     console.log("Successfully generated posts for all platforms");
 
-    return jsonResponse({ posts });
+    return jsonResponse(corsHeaders, { posts });
   } catch (error) {
     console.error("Error in generate-post function:", error);
     return jsonResponse(
+      corsHeaders,
       { error: error instanceof Error ? error.message : "Unknown error" },
       500
     );

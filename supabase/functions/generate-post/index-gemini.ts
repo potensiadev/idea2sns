@@ -2,11 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { aiRouter } from "../_shared/aiRouter.ts";
 import { createSupabaseClient } from "../_shared/supabaseClient.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 const simpleGenerateSchema = z
   .object({
@@ -43,6 +39,16 @@ const blogGenerateSchema = z.object({
 
 const generateRequestSchema = z.discriminatedUnion("type", [simpleGenerateSchema, blogGenerateSchema]);
 
+const jsonResponse = (
+  corsHeaders: HeadersInit,
+  body: Record<string, unknown>,
+  status = 200
+) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 const PLATFORM_PROMPTS = {
   threads: `Write a Threads post that captures a quick, punchy thought inspired by the source content.
 Follow these guidelines:
@@ -54,17 +60,6 @@ Follow these guidelines:
 - Style should blend Twitter brevity with Instagram personality
 - Avoid repeating any phrasing used in other platform outputs
 - Do not use # or ## unless they're actual hashtags (rarely needed here)`,
-
-  instagram: `Write an Instagram caption that reads smoothly and visually like a native IG post.
-Follow these guidelines:
-- Start with a strong first line that instantly catches attention
-- Use a warm, aesthetic, or inspiring tone throughout
-- Structure the caption into 3–4 short paragraphs with intentional line breaks
-- Place emojis naturally within sentences or at the end of lines (not overused)
--- Finish with 20–30 relevant hashtags mixing both popular and niche keywords
--- Ensure the caption is easy to skim and visually pleasant
--- Do not reuse sentence structures from other platform outputs
--- Do not use # or ## except for hashtags at the end`,
 
   twitter: `Write a Twitter/X post that delivers one sharp insight from the content.
 Follow these guidelines:
@@ -87,6 +82,7 @@ Follow these guidelines:
 };
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -95,10 +91,7 @@ serve(async (req) => {
     // Verify authentication
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Missing authorization header" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(corsHeaders, { error: "Missing authorization header" }, 401);
     }
 
     let supabase;
@@ -106,10 +99,7 @@ serve(async (req) => {
       supabase = createSupabaseClient(req);
     } catch (error) {
       console.error("Supabase configuration error", error);
-      return new Response(JSON.stringify({ error: "Server configuration error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(corsHeaders, { error: "Server configuration error" }, 500);
     }
 
     const {
@@ -117,10 +107,7 @@ serve(async (req) => {
       error: userError,
     } = await supabase.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(corsHeaders, { error: "Unauthorized" }, 401);
     }
 
     // Validate input
@@ -129,10 +116,11 @@ serve(async (req) => {
 
     if (!validationResult.success) {
       console.error("Validation error:", validationResult.error);
-      return new Response(JSON.stringify({ error: "Invalid request data", details: validationResult.error }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(
+        corsHeaders,
+        { error: "Invalid request data", details: validationResult.error },
+        400
+      );
     }
 
     const requestData = validationResult.data;
@@ -178,10 +166,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
         const result = await callAI(systemPrompt, userPrompt);
 
         if (result.error) {
-          return new Response(JSON.stringify({ error: result.error }), {
-            status: result.status,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+          return jsonResponse(corsHeaders, { error: result.error }, result.status);
         }
 
         posts[platform] = result.content ?? "";
@@ -220,10 +205,7 @@ Provide a structured summary in JSON format:
       const analysisResult = await callAI(analysisSystemPrompt, analysisUserPrompt);
 
       if (analysisResult.error) {
-        return new Response(JSON.stringify({ error: analysisResult.error }), {
-          status: analysisResult.status,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return jsonResponse(corsHeaders, { error: analysisResult.error }, analysisResult.status);
       }
 
       console.log("Blog analysis complete:", analysisResult.content);
@@ -276,10 +258,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
         const result = await callAI(systemPrompt, userPrompt);
 
         if (result.error) {
-          return new Response(JSON.stringify({ error: result.error }), {
-            status: result.status,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+          return jsonResponse(corsHeaders, { error: result.error }, result.status);
         }
 
         posts[platform] = result.content ?? "";
@@ -288,12 +267,13 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
 
     console.log("Successfully generated posts for all platforms");
 
-    return new Response(JSON.stringify({ posts }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return jsonResponse(corsHeaders, { posts });
   } catch (error) {
     console.error("Error in generate-post function:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(
+      corsHeaders,
+      { error: error instanceof Error ? error.message : "Unknown error" },
+      500
+    );
   }
 });
