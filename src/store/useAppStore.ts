@@ -6,24 +6,9 @@ export type Plan = 'free' | 'pro';
 export interface LimitsConfig {
   daily_generations: number | null;
   max_platforms_per_request: number | null;
-  brand_voice: boolean;
   blog_to_sns: boolean;
   max_blog_length: number | null;
-  variations_per_request: number | null;
-  history_limit: number | null;
   priority_routing: boolean;
-}
-
-export interface BrandVoiceSelection {
-  id: string;
-  label?: string;
-  voice: {
-    tone: string;
-    sentenceStyle: string;
-    vocabulary: string[];
-    strictness: number;
-    formatTraits?: string[];
-  };
 }
 
 interface AppState {
@@ -32,17 +17,13 @@ interface AppState {
   limits: LimitsConfig;
   dailyUsed: number;
   loading: boolean;
-  brandVoiceSelection: BrandVoiceSelection | null;
-  
+
   // Computed getters
-  brandVoiceAllowed: boolean;
   maxPlatforms: number | null;
   maxBlogLength: number | null;
-  variationsAllowed: number | null;
-  
+
   // Actions
   setUser: (user: any) => void;
-  setBrandVoice: (selection: BrandVoiceSelection | null) => void;
   loadProfileAndLimits: () => Promise<void>;
   loadDailyUsage: () => Promise<void>;
   refreshAfterBilling: () => Promise<void>;
@@ -51,23 +32,17 @@ interface AppState {
 
 export const DEFAULT_LIMITS: LimitsConfig = {
   daily_generations: 5,
-  max_platforms_per_request: 1,
-  brand_voice: false,
+  max_platforms_per_request: 3,
   blog_to_sns: true,
   max_blog_length: 2000,
-  variations_per_request: 1,
-  history_limit: 50,
   priority_routing: false,
 };
 
 export const PRO_LIMITS: LimitsConfig = {
   daily_generations: null,
-  max_platforms_per_request: 6,
-  brand_voice: true,
+  max_platforms_per_request: 3,
   blog_to_sns: true,
   max_blog_length: null,
-  variations_per_request: null,
-  history_limit: null,
   priority_routing: true,
 };
 
@@ -77,50 +52,16 @@ export const useAppStore = create<AppState>((set, get) => ({
   limits: DEFAULT_LIMITS,
   dailyUsed: 0,
   loading: true,
-  brandVoiceSelection:
-    typeof window !== 'undefined'
-      ? (() => {
-          try {
-            const stored = localStorage.getItem('defaultBrandVoiceSelection');
-            return stored ? (JSON.parse(stored) as BrandVoiceSelection) : null;
-          } catch (err) {
-            console.error('Failed to read stored brand voice selection', err);
-            return null;
-          }
-        })()
-      : null,
-  
+
   // Computed getters
-  get brandVoiceAllowed() {
-    return get().limits.brand_voice;
-  },
   get maxPlatforms() {
     return get().limits.max_platforms_per_request;
   },
   get maxBlogLength() {
     return get().limits.max_blog_length;
   },
-  get variationsAllowed() {
-    return get().limits.variations_per_request;
-  },
-  
+
   setUser: (user) => set({ user }),
-
-  setBrandVoice: (selection) => {
-    try {
-      if (typeof window !== 'undefined') {
-        if (selection) {
-          localStorage.setItem('defaultBrandVoiceSelection', JSON.stringify(selection));
-        } else {
-          localStorage.removeItem('defaultBrandVoiceSelection');
-        }
-      }
-    } catch (err) {
-      console.error('Failed to persist brand voice selection', err);
-    }
-
-    set({ brandVoiceSelection: selection });
-  },
   
   loadProfileAndLimits: async () => {
     try {
@@ -194,21 +135,12 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
   
   reset: () => {
-    try {
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('defaultBrandVoiceSelection');
-      }
-    } catch (err) {
-      console.error('Failed to clear stored brand voice selection', err);
-    }
-    
     set({
       user: null,
       plan: 'free',
       limits: DEFAULT_LIMITS,
       dailyUsed: 0,
       loading: false,
-      brandVoiceSelection: null,
     });
   },
 }));

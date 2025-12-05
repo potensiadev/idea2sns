@@ -1,0 +1,16 @@
+# Netlify configuration for idea2sns production deployment
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# SPA redirects - all paths should serve index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables (configure in Netlify dashboard)
+# VITE_SUPABASE_URL
+# VITE_SUPABASE_ANON_KEY
+# VITE_APP_ENV=production

@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { 
-  Facebook, 
-  Instagram, 
-  Linkedin, 
+import {
+  Linkedin,
   Twitter,
   MessageCircle,
-  Youtube,
 } from 'lucide-react';
 
 interface PlatformSelectorProps {
@@ -17,12 +14,9 @@ interface PlatformSelectorProps {
 }
 
 const PLATFORMS = [
-  { id: 'facebook', name: 'Facebook', icon: Facebook },
-  { id: 'instagram', name: 'Instagram', icon: Instagram },
+  { id: 'twitter', name: 'Twitter (X)', icon: Twitter },
   { id: 'linkedin', name: 'LinkedIn', icon: Linkedin },
-  { id: 'twitter', name: 'Twitter', icon: Twitter },
   { id: 'threads', name: 'Threads', icon: MessageCircle },
-  { id: 'youtube', name: 'YouTube', icon: Youtube },
 ];
 
 export const PlatformSelector = ({ selected, onChange, maxPlatforms }: PlatformSelectorProps) => {
@@ -45,12 +39,12 @@ export const PlatformSelector = ({ selected, onChange, maxPlatforms }: PlatformS
           {selected.length}/{PLATFORMS.length} selected
         </span>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {PLATFORMS.map((platform) => {
           const Icon = platform.icon;
           const isSelected = selected.includes(platform.id);
           const isDisabled = !isSelected && maxPlatforms !== null && selected.length >= maxPlatforms;
-          
+
           return (
             <Button
               key={platform.id}

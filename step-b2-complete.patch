@@ -1,0 +1,2653 @@
+diff --git a/.claude/settings.local.json b/.claude/settings.local.json
+index c78c431..c32d76b 100644
+--- a/.claude/settings.local.json
++++ b/.claude/settings.local.json
+@@ -14,7 +14,10 @@
+       "Bash(gh repo clone:*)",
+       "Bash(printf:*)",
+       "Bash(git credential:*)",
+-      "Bash(git config:*)"
++      "Bash(git config:*)",
++      "Bash(git apply:*)",
++      "Bash(cat:*)",
++      "Bash(git reset:*)"
+     ],
+     "deny": [],
+     "ask": []
+diff --git a/.env.example b/.env.example
+index fc9bffd..6f88eb8 100644
+--- a/.env.example
++++ b/.env.example
+@@ -3,8 +3,12 @@
+ 
+ VITE_SUPABASE_URL=https://voalboudivbezmjlzicd.supabase.co
+ VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvYWxib3VkaXZiZXptamx6aWNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1MTg0NTksImV4cCI6MjA4MDA5NDQ1OX0.tB_kktKJ50umNOQApC5uWNVFaxa4a8f4iM4R64F37JY
+-SUPABASE_URL=https://voalboudivbezmjlzicd.supabase.co
++
++# Application Environment
++VITE_APP_ENV=production
++
+ # Server-side keys (never commit real values)
++SUPABASE_URL=https://voalboudivbezmjlzicd.supabase.co
+ SUPABASE_ANON_KEY=
+ SUPABASE_SERVICE_ROLE_KEY=
+ 
+diff --git a/deploy-instructions.md b/deploy-instructions.md
+index 614c62c..25edfa9 100644
+--- a/deploy-instructions.md
++++ b/deploy-instructions.md
+@@ -33,9 +33,81 @@ Settings → Edge Functions → Environment Variables
+ 
+ ## 6. Netlify 프론트엔드 배포
+ 
+-1. Netlify에 GitHub 저장소 연결
+-2. Build settings:
+-   - Build command: `npm run build`
+-   - Publish directory: `dist`
+-3. Environment variables에 Supabase 키 설정
+-4. Custom domain: idea2sns.space 연결
++### 6.1 Netlify 사이트 생성
++
++1. https://app.netlify.com/ 로그인
++2. "Add new site" → "Import an existing project"
++3. GitHub 저장소 선택: `potensiadev/idea2sns`
++4. Branch: `main`
++
++### 6.2 Build 설정 (자동 감지됨, netlify.toml 사용)
++
++- Build command: `npm run build`
++- Publish directory: `dist`
++- Base directory: (비워둠)
++
++### 6.3 Environment Variables 설정
++
++Netlify Dashboard → Site settings → Environment variables:
++
++```
++VITE_SUPABASE_URL=https://voalboudivbezmjlzicd.supabase.co
++VITE_SUPABASE_ANON_KEY=(Supabase 프로젝트의 anon key)
++VITE_APP_ENV=production
++```
++
++### 6.4 Custom Domain 설정 (idea2sns.space)
++
++#### Netlify에서:
++1. Site settings → Domain management → Add custom domain
++2. `idea2sns.space` 입력
++3. `www.idea2sns.space` 도 추가 (자동 리다이렉트)
++
++#### Porkbun DNS 설정:
++
++A 레코드:
++```
++Type: A
++Host: @
++Answer: 75.2.60.5 (Netlify load balancer IP)
++TTL: 600
++```
++
++CNAME 레코드:
++```
++Type: CNAME
++Host: www
++Answer: idea2sns.netlify.app
++TTL: 600
++```
++
++⚠️ DNS 전파까지 최대 24-48시간 소요될 수 있음
++
++### 6.5 Supabase Auth 리다이렉트 URL 등록
++
++Supabase Dashboard → Authentication → URL Configuration:
++
++**Site URL:**
++```
++https://idea2sns.space
++```
++
++**Redirect URLs (모두 추가):**
++```
++https://idea2sns.space/*
++https://www.idea2sns.space/*
++https://idea2sns.netlify.app/*
++http://localhost:5173/*
++http://localhost:8080/*
++```
++
++### 6.6 HTTPS 인증서
++
++Netlify가 자동으로 Let's Encrypt SSL 인증서 발급 (약 몇 분 소요)
++
++### 6.7 배포 확인
++
++1. Netlify에서 자동 배포 완료 대기
++2. `https://idea2sns.space` 접속 테스트
++3. 로그인/회원가입 테스트
++4. 콘텐츠 생성 테스트
+diff --git a/netlify.toml b/netlify.toml
+new file mode 100644
+index 0000000..2b4c855
+--- /dev/null
++++ b/netlify.toml
+@@ -0,0 +1,16 @@
++# Netlify configuration for idea2sns production deployment
++
++[build]
++  command = "npm run build"
++  publish = "dist"
++
++# SPA redirects - all paths should serve index.html
++[[redirects]]
++  from = "/*"
++  to = "/index.html"
++  status = 200
++
++# Environment variables (configure in Netlify dashboard)
++# VITE_SUPABASE_URL
++# VITE_SUPABASE_ANON_KEY
++# VITE_APP_ENV=production
+diff --git a/src/App.tsx b/src/App.tsx
+index f0e2098..e125fe8 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -2,18 +2,16 @@ import { Toaster } from "@/components/ui/toaster";
+ import { Toaster as Sonner } from "@/components/ui/sonner";
+ import { TooltipProvider } from "@/components/ui/tooltip";
+ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+-import { BrowserRouter, Routes, Route } from "react-router-dom";
++import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+ import { AuthProvider } from "@/components/AuthProvider";
+ import { AppLayout } from "@/layout/AppLayout";
+ import ProtectedRoute from "@/components/ProtectedRoute";
+ import Landing from "@/pages/Landing";
+ import Auth from "@/pages/Auth";
+-import Create from "@/pages/Create";
+-import BrandVoice from "@/pages/BrandVoice";
+-import History from "@/pages/History";
+-import Account from "@/pages/Account";
++import Generate from "@/pages/Generate";
++import BlogToSNS from "@/pages/BlogToSNS";
++import Settings from "@/pages/Settings";
+ import NotFound from "@/pages/NotFound";
+-import Debug from "@/pages/Debug";
+ 
+ const queryClient = new QueryClient();
+ 
+@@ -27,17 +25,21 @@ const App = () => (
+           <Routes>
+             <Route path="/" element={<Landing />} />
+             <Route path="/auth" element={<Auth />} />
+-            
++
+             {/* Protected Routes with AppLayout */}
+             <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+-              <Route path="/create" element={<Create />} />
+-              <Route path="/brand-voice" element={<BrandVoice />} />
+-              <Route path="/history" element={<History />} />
+-              <Route path="/account" element={<Account />} />
++              <Route path="/generate" element={<Generate />} />
++              <Route path="/blog-to-sns" element={<BlogToSNS />} />
++              <Route path="/settings" element={<Settings />} />
+             </Route>
+ 
+-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+-            <Route path="/debug" element={<Debug />} />
++            {/* Redirects for old routes */}
++            <Route path="/create" element={<Navigate to="/generate" replace />} />
++            <Route path="/history" element={<Navigate to="/generate" replace />} />
++            <Route path="/brand-voice" element={<Navigate to="/generate" replace />} />
++            <Route path="/account" element={<Navigate to="/settings" replace />} />
++
++            {/* Catch-all */}
+             <Route path="*" element={<NotFound />} />
+           </Routes>
+         </BrowserRouter>
+diff --git a/src/components/BlogContentForm.tsx b/src/components/BlogContentForm.tsx
+deleted file mode 100644
+index ebc6e8b..0000000
+--- a/src/components/BlogContentForm.tsx
++++ /dev/null
+@@ -1,155 +0,0 @@
+-import { useState } from "react";
+-import { Button } from "@/components/ui/button";
+-import { Textarea } from "@/components/ui/textarea";
+-import { Input } from "@/components/ui/input";
+-import { Label } from "@/components/ui/label";
+-import { Checkbox } from "@/components/ui/checkbox";
+-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+-import { Loader2, FileText, Sparkles } from "lucide-react";
+-import { useTranslation } from "react-i18next";
+-
+-interface BlogContentFormProps {
+-  onGenerate: (blogContent: string, keyMessage: string, platforms: string[]) => void;
+-  isGenerating: boolean;
+-}
+-
+-const MAX_CHARS = 10000;
+-
+-export const BlogContentForm = ({ onGenerate, isGenerating }: BlogContentFormProps) => {
+-  const { t } = useTranslation();
+-
+-  const PLATFORMS = [
+-    { id: "twitter", label: t('platforms.twitter'), color: "platform-twitter" },
+-    { id: "instagram", label: t('platforms.instagram'), color: "platform-instagram" },
+-    { id: "reddit", label: t('platforms.reddit'), color: "platform-reddit" },
+-    { id: "threads", label: t('platforms.threads'), color: "platform-threads" },
+-    { id: "pinterest", label: t('platforms.pinterest'), color: "platform-pinterest" }
+-  ];
+-  const [blogContent, setBlogContent] = useState("");
+-  const [keyMessage, setKeyMessage] = useState("");
+-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["twitter"]);
+-
+-  const charCount = blogContent.length;
+-  const isOverLimit = charCount > MAX_CHARS;
+-
+-  const handleSubmit = (e: React.FormEvent) => {
+-    e.preventDefault();
+-    if (isOverLimit) {
+-      return;
+-    }
+-    onGenerate(blogContent, keyMessage, selectedPlatforms);
+-  };
+-
+-  const togglePlatform = (platformId: string) => {
+-    setSelectedPlatforms((prev) =>
+-      prev.includes(platformId)
+-        ? prev.filter((id) => id !== platformId)
+-        : [...prev, platformId]
+-    );
+-  };
+-
+-  return (
+-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 mb-12 border-0 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
+-      <CardHeader className="pb-6">
+-        <CardTitle className="flex items-center gap-3 text-2xl font-bold">
+-          <div className="p-2 bg-primary/10 rounded-lg">
+-            <FileText className="h-6 w-6 text-primary" />
+-          </div>
+-          {t('blogForm.title')}
+-        </CardTitle>
+-        <CardDescription className="text-base mt-2">
+-          {t('blogForm.description')}
+-        </CardDescription>
+-      </CardHeader>
+-      <CardContent>
+-        <form onSubmit={handleSubmit} className="space-y-6">
+-          <div className="space-y-2">
+-            <div className="flex items-center justify-between">
+-              <Label htmlFor="blogContent">{t('blogForm.blogContent')}</Label>
+-              <span
+-                className={`text-sm ${
+-                  isOverLimit
+-                    ? "text-red-500 font-semibold"
+-                    : charCount > MAX_CHARS * 0.9
+-                    ? "text-orange-500"
+-                    : "text-muted-foreground"
+-                }`}
+-              >
+-                {charCount.toLocaleString()} / {MAX_CHARS.toLocaleString()}{t('blogForm.characters')}
+-              </span>
+-            </div>
+-            <Textarea
+-              id="blogContent"
+-              placeholder={t('blogForm.blogPlaceholder')}
+-              value={blogContent}
+-              onChange={(e) => setBlogContent(e.target.value)}
+-              required
+-              className="min-h-64 resize-y text-base leading-relaxed border-2 focus:border-primary rounded-xl"
+-            />
+-            {isOverLimit && (
+-              <p className="text-sm text-red-500">
+-                {t('blogForm.overLimit', { max: MAX_CHARS.toLocaleString() })}
+-              </p>
+-            )}
+-            <p className="text-xs text-muted-foreground">
+-              {t('blogForm.tip')}
+-            </p>
+-          </div>
+-
+-          <div className="space-y-2">
+-            <Label htmlFor="keyMessage">{t('blogForm.keyMessage')}</Label>
+-            <Input
+-              id="keyMessage"
+-              placeholder={t('blogForm.keyMessagePlaceholder')}
+-              value={keyMessage}
+-              onChange={(e) => setKeyMessage(e.target.value)}
+-              className="h-14 border-2 focus:border-primary rounded-xl text-base"
+-            />
+-            <p className="text-xs text-muted-foreground">
+-              {t('blogForm.keyMessageTip')}
+-            </p>
+-          </div>
+-
+-          <div className="space-y-4">
+-            <Label className="text-base font-semibold">{t('blogForm.selectPlatforms')}</Label>
+-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+-              {PLATFORMS.map((platform) => (
+-                <button
+-                  key={platform.id}
+-                  type="button"
+-                  onClick={() => togglePlatform(platform.id)}
+-                  className={`p-4 rounded-xl border-2 transition-all duration-200 text-center font-semibold text-sm ${
+-                    selectedPlatforms.includes(platform.id)
+-                      ? `border-primary bg-primary/5 shadow-md scale-105`
+-                      : 'border-border hover:border-foreground/20 hover:bg-muted'
+-                  } cursor-pointer`}
+-                >
+-                  {platform.label}
+-                </button>
+-              ))}
+-            </div>
+-          </div>
+-
+-          <Button
+-            type="submit"
+-            size="lg"
+-            disabled={isGenerating || isOverLimit || !blogContent.trim()}
+-            className="w-full h-16 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+-          >
+-            {isGenerating ? (
+-              <>
+-                <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+-                {t('blogForm.generating')}
+-              </>
+-            ) : (
+-              <>
+-                <Sparkles className="mr-3 h-6 w-6" />
+-                {t('blogForm.generate')}
+-              </>
+-            )}
+-          </Button>
+-        </form>
+-      </CardContent>
+-    </Card>
+-  );
+-};
+diff --git a/src/components/ContentForm.tsx b/src/components/ContentForm.tsx
+deleted file mode 100644
+index da4674b..0000000
+--- a/src/components/ContentForm.tsx
++++ /dev/null
+@@ -1,183 +0,0 @@
+-import { useState } from "react";
+-import { Button } from "@/components/ui/button";
+-import { Input } from "@/components/ui/input";
+-import { Textarea } from "@/components/ui/textarea";
+-import { Label } from "@/components/ui/label";
+-import { Checkbox } from "@/components/ui/checkbox";
+-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+-import { Loader2, Sparkles, Zap } from "lucide-react";
+-import { useTranslation } from "react-i18next";
+-
+-interface ContentFormProps {
+-  onGenerate: (topic: string, content: string, tone: string, platforms: string[]) => Promise<void>;
+-  isGenerating: boolean;
+-}
+-
+-export const ContentForm = ({ onGenerate, isGenerating }: ContentFormProps) => {
+-  const { t } = useTranslation();
+-
+-  const PLATFORMS = [
+-    { id: "twitter", label: t("platforms.twitter"), color: "platform-twitter" },
+-    { id: "instagram", label: t("platforms.instagram"), color: "platform-instagram" },
+-    { id: "reddit", label: t("platforms.reddit"), color: "platform-reddit" },
+-    { id: "threads", label: t("platforms.threads"), color: "platform-threads" },
+-    { id: "pinterest", label: t("platforms.pinterest"), color: "platform-pinterest" },
+-  ];
+-
+-  const TONES = [
+-    { value: "professional", label: t("contentForm.tones.professional") },
+-    { value: "casual", label: t("contentForm.tones.casual") },
+-    { value: "humorous", label: t("contentForm.tones.humorous") },
+-    { value: "inspirational", label: t("contentForm.tones.inspirational") },
+-    { value: "educational", label: t("contentForm.tones.educational") },
+-  ];
+-  const [topic, setTopic] = useState("");
+-  const [content, setContent] = useState("");
+-  const [tone, setTone] = useState("professional");
+-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(["twitter"]);
+-  const [formError, setFormError] = useState<string | null>(null);
+-  const [isSubmitting, setIsSubmitting] = useState(false);
+-
+-  const isFormDisabled = isGenerating || isSubmitting;
+-
+-  const handleGenerate = async (e: React.FormEvent) => {
+-    e.preventDefault();
+-    setFormError(null);
+-    setIsSubmitting(true);
+-
+-    try {
+-      await onGenerate(topic, content, tone, selectedPlatforms);
+-    } catch (error) {
+-      console.error("Form submission failed", error);
+-      setFormError(error instanceof Error ? error.message : "Failed to generate content. Please try again.");
+-    } finally {
+-      setIsSubmitting(false);
+-    }
+-  };
+-
+-  const togglePlatform = (platformId: string) => {
+-    setSelectedPlatforms((prev) =>
+-      prev.includes(platformId) ? prev.filter((id) => id !== platformId) : [...prev, platformId],
+-    );
+-  };
+-
+-  return (
+-    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 mb-12 border-0 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300">
+-      <CardHeader className="pb-6">
+-        <CardTitle className="flex items-center gap-3 text-2xl font-bold">
+-          <div className="p-2 bg-primary/10 rounded-lg">
+-            <Zap className="h-6 w-6 text-primary" />
+-          </div>
+-          {t("Idea to SNS Contents")}
+-        </CardTitle>
+-        <CardDescription className="text-base mt-2">{t("Write any Idea for SNS Contents")}</CardDescription>
+-      </CardHeader>
+-      <CardContent className="pt-0">
+-        <form onSubmit={handleGenerate} className="space-y-6" aria-busy={isFormDisabled}>
+-          {formError && (
+-            <div
+-              role="alert"
+-              className="rounded-xl border-2 border-destructive/50 bg-destructive/5 p-4 text-destructive text-sm font-semibold"
+-            >
+-              {formError}
+-            </div>
+-          )}
+-          <div className="space-y-3">
+-            <Label htmlFor="topic" className="text-base font-semibold">
+-              {t("contentForm.topic")}
+-            </Label>
+-            <Input
+-              id="topic"
+-              placeholder={t("contentForm.topicPlaceholder")}
+-              value={topic}
+-              onChange={(e) => setTopic(e.target.value)}
+-              required
+-              className="h-14 border-2 focus:border-primary rounded-xl text-base"
+-              disabled={isFormDisabled}
+-            />
+-          </div>
+-
+-          <div className="space-y-3">
+-            <Label htmlFor="content" className="text-base font-semibold">
+-              {t("contentForm.mainContent")}
+-              <span className="text-muted-foreground text-sm ml-2 font-normal">({content.length}/10000)</span>
+-            </Label>
+-            <Textarea
+-              id="content"
+-              placeholder={t("contentForm.contentPlaceholder")}
+-              value={content}
+-              onChange={(e) => {
+-                if (e.target.value.length <= 10000) {
+-                  setContent(e.target.value);
+-                }
+-              }}
+-              required
+-              className="min-h-40 resize-y text-base leading-relaxed border-2 focus:border-primary rounded-xl"
+-              disabled={isFormDisabled}
+-              maxLength={10000}
+-            />
+-          </div>
+-
+-          <div className="space-y-3">
+-            <Label htmlFor="tone" className="text-base font-semibold">
+-              {t("contentForm.tone")}
+-            </Label>
+-            <Select value={tone} onValueChange={setTone} disabled={isFormDisabled}>
+-              <SelectTrigger id="tone" className="h-14 border-2 focus:border-primary rounded-xl text-base">
+-                <SelectValue />
+-              </SelectTrigger>
+-              <SelectContent>
+-                {TONES.map((toneItem) => (
+-                  <SelectItem key={toneItem.value} value={toneItem.value}>
+-                    {toneItem.label}
+-                  </SelectItem>
+-                ))}
+-              </SelectContent>
+-            </Select>
+-          </div>
+-
+-          <div className="space-y-4">
+-            <Label className="text-base font-semibold">{t("contentForm.selectPlatforms")}</Label>
+-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+-              {PLATFORMS.map((platform) => (
+-                <button
+-                  key={platform.id}
+-                  type="button"
+-                  onClick={() => togglePlatform(platform.id)}
+-                  disabled={isFormDisabled}
+-                  className={`p-4 rounded-xl border-2 transition-all duration-200 text-center font-semibold text-sm ${
+-                    selectedPlatforms.includes(platform.id)
+-                      ? `border-primary bg-primary/5 shadow-md scale-105`
+-                      : "border-border hover:border-foreground/20 hover:bg-muted"
+-                  } ${isFormDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+-                >
+-                  {platform.label}
+-                </button>
+-              ))}
+-            </div>
+-          </div>
+-
+-          <Button
+-            type="submit"
+-            size="lg"
+-            disabled={isFormDisabled}
+-            className="w-full h-16 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+-          >
+-            {isFormDisabled ? (
+-              <>
+-                <Loader2 className="mr-3 h-6 w-6 animate-spin" />
+-                {t("contentForm.generating")}
+-              </>
+-            ) : (
+-              <>
+-                <Sparkles className="mr-3 h-6 w-6" />
+-                {t("contentForm.generate")}
+-              </>
+-            )}
+-          </Button>
+-        </form>
+-      </CardContent>
+-    </Card>
+-  );
+-};
+diff --git a/src/components/PlatformSelector.tsx b/src/components/PlatformSelector.tsx
+index d426cec..28e3c9f 100644
+--- a/src/components/PlatformSelector.tsx
++++ b/src/components/PlatformSelector.tsx
+@@ -1,13 +1,10 @@
+ import { useState } from 'react';
+ import { Button } from '@/components/ui/button';
+ import { cn } from '@/lib/utils';
+-import { 
+-  Facebook, 
+-  Instagram, 
+-  Linkedin, 
++import {
++  Linkedin,
+   Twitter,
+   MessageCircle,
+-  Youtube,
+ } from 'lucide-react';
+ 
+ interface PlatformSelectorProps {
+@@ -17,12 +14,9 @@ interface PlatformSelectorProps {
+ }
+ 
+ const PLATFORMS = [
+-  { id: 'facebook', name: 'Facebook', icon: Facebook },
+-  { id: 'instagram', name: 'Instagram', icon: Instagram },
++  { id: 'twitter', name: 'Twitter (X)', icon: Twitter },
+   { id: 'linkedin', name: 'LinkedIn', icon: Linkedin },
+-  { id: 'twitter', name: 'Twitter', icon: Twitter },
+   { id: 'threads', name: 'Threads', icon: MessageCircle },
+-  { id: 'youtube', name: 'YouTube', icon: Youtube },
+ ];
+ 
+ export const PlatformSelector = ({ selected, onChange, maxPlatforms }: PlatformSelectorProps) => {
+@@ -45,12 +39,12 @@ export const PlatformSelector = ({ selected, onChange, maxPlatforms }: PlatformS
+           {selected.length}/{PLATFORMS.length} selected
+         </span>
+       </div>
+-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
++      <div className="grid grid-cols-3 gap-3">
+         {PLATFORMS.map((platform) => {
+           const Icon = platform.icon;
+           const isSelected = selected.includes(platform.id);
+           const isDisabled = !isSelected && maxPlatforms !== null && selected.length >= maxPlatforms;
+-          
++
+           return (
+             <Button
+               key={platform.id}
+diff --git a/src/components/ResultCards.tsx b/src/components/ResultCards.tsx
+index a3114fc..370f20c 100644
+--- a/src/components/ResultCards.tsx
++++ b/src/components/ResultCards.tsx
+@@ -11,18 +11,6 @@ interface ResultCardsProps {
+ }
+ 
+ const PLATFORM_CONFIG = {
+-  facebook: {
+-    name: "Facebook",
+-    icon: "📘",
+-    color: "border-blue-500",
+-    bgColor: "bg-blue-500/10",
+-  },
+-  instagram: {
+-    name: "Instagram",
+-    icon: "📷",
+-    color: "border-pink-500",
+-    bgColor: "bg-pink-500/10",
+-  },
+   linkedin: {
+     name: "LinkedIn",
+     icon: "💼",
+@@ -30,7 +18,7 @@ const PLATFORM_CONFIG = {
+     bgColor: "bg-blue-700/10",
+   },
+   twitter: {
+-    name: "Twitter",
++    name: "Twitter (X)",
+     icon: "🐦",
+     color: "border-sky-500",
+     bgColor: "bg-sky-500/10",
+@@ -41,12 +29,6 @@ const PLATFORM_CONFIG = {
+     color: "border-slate-700",
+     bgColor: "bg-slate-700/10",
+   },
+-  youtube: {
+-    name: "YouTube",
+-    icon: "📹",
+-    color: "border-red-600",
+-    bgColor: "bg-red-600/10",
+-  },
+ } as const;
+ 
+ export const ResultCards = ({ content }: ResultCardsProps) => {
+diff --git a/src/layout/AppLayout.tsx b/src/layout/AppLayout.tsx
+index 18722e2..e50ec7a 100644
+--- a/src/layout/AppLayout.tsx
++++ b/src/layout/AppLayout.tsx
+@@ -60,20 +60,17 @@ export const AppLayout = () => {
+       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
+         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+           <div className="flex items-center gap-6">
+-            <Link to="/create" className="flex items-center gap-2 font-bold text-xl">
++            <Link to="/" className="flex items-center gap-2 font-bold text-xl">
+               <Sparkles className="h-6 w-6 text-primary" />
+               <span>idea2sns</span>
+             </Link>
+-            
++
+             <nav className="hidden md:flex items-center gap-4">
+-              <Link to="/create">
+-                <Button variant="ghost" size="sm">Create</Button>
+-              </Link>
+-              <Link to="/history">
+-                <Button variant="ghost" size="sm">History</Button>
++              <Link to="/generate">
++                <Button variant="ghost" size="sm">Generate</Button>
+               </Link>
+-              <Link to="/brand-voice">
+-                <Button variant="ghost" size="sm">Brand Voice</Button>
++              <Link to="/blog-to-sns">
++                <Button variant="ghost" size="sm">Blog to SNS</Button>
+               </Link>
+             </nav>
+           </div>
+@@ -87,7 +84,7 @@ export const AppLayout = () => {
+             {/* Upgrade Button */}
+             {!isPro && (
+               <Button size="sm" variant="default" asChild>
+-                <Link to="/account">
++                <Link to="/settings">
+                   <Sparkles className="h-4 w-4 mr-1" />
+                   Upgrade to Pro
+                 </Link>
+@@ -112,7 +109,7 @@ export const AppLayout = () => {
+                 </DropdownMenuLabel>
+                 <DropdownMenuSeparator />
+                 <DropdownMenuItem asChild>
+-                  <Link to="/account">Account Settings</Link>
++                  <Link to="/settings">Settings</Link>
+                 </DropdownMenuItem>
+                 <DropdownMenuSeparator />
+                 <DropdownMenuItem onClick={handleSignOut}>
+diff --git a/src/pages/BlogToSNS.tsx b/src/pages/BlogToSNS.tsx
+new file mode 100644
+index 0000000..8961f35
+--- /dev/null
++++ b/src/pages/BlogToSNS.tsx
+@@ -0,0 +1,292 @@
++import { useState } from 'react';
++import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
++import { Button } from '@/components/ui/button';
++import { Textarea } from '@/components/ui/textarea';
++import { Label } from '@/components/ui/label';
++import { PlatformSelector } from '@/components/PlatformSelector';
++import { LoadingSpinner } from '@/components/LoadingSpinner';
++import { useAppStore } from '@/store/useAppStore';
++import { edgeFunctions } from '@/api/edgeFunctions';
++import { toast } from 'sonner';
++import { Sparkles, AlertCircle, FileText } from 'lucide-react';
++import { Alert, AlertDescription } from '@/components/ui/alert';
++import { GeneratedContent, ResultCards } from '@/components/ResultCards';
++import { Link, useNavigate } from 'react-router-dom';
++import { z } from 'zod';
++
++const blogContentSchema = z.string()
++  .min(10, 'Blog content must be at least 10 characters')
++  .max(50000, 'Blog content must be less than 50,000 characters');
++
++export default function BlogToSNS() {
++  const {
++    maxPlatforms,
++    maxBlogLength,
++    dailyUsed,
++    limits,
++    loadDailyUsage,
++  } = useAppStore();
++
++  const navigate = useNavigate();
++
++  const [blogContent, setBlogContent] = useState('');
++  const [platforms, setPlatforms] = useState<string[]>([]);
++  const [isLoading, setIsLoading] = useState(false);
++  const [results, setResults] = useState<GeneratedContent | null>(null);
++
++  const isAtDailyLimit = limits.daily_generations !== null && dailyUsed >= limits.daily_generations;
++  const platformLimitExceeded = maxPlatforms !== null && platforms.length > maxPlatforms;
++  const blogLengthExceeded = maxBlogLength !== null && blogContent.length > maxBlogLength;
++  const canGenerate = !isAtDailyLimit && !platformLimitExceeded && !blogLengthExceeded && platforms.length > 0 && blogContent.trim();
++
++  const handlePlatformChange = (newPlatforms: string[]) => {
++    if (maxPlatforms !== null && newPlatforms.length > maxPlatforms) {
++      toast.error(`You can select up to ${maxPlatforms} platform${maxPlatforms === 1 ? '' : 's'}`);
++      return;
++    }
++    setPlatforms(newPlatforms);
++  };
++
++  const handleFunctionError = (code?: string, message?: string) => {
++    if (code === 'QUOTA_EXCEEDED') {
++      toast.error(message || 'You reached your plan limits.');
++      return true;
++    }
++    if (code === 'AUTH_REQUIRED') {
++      navigate('/auth');
++      return true;
++    }
++    if (code === 'VALIDATION_ERROR') {
++      toast.error(message || 'Please check your input and try again.');
++      return true;
++    }
++    if (code === 'PROVIDER_ERROR' || code === 'INTERNAL_ERROR') {
++      toast.error(message || 'Failed to generate content. Please try again.');
++      return true;
++    }
++    return false;
++  };
++
++  const handleSubmit = async (e: React.FormEvent) => {
++    e.preventDefault();
++
++    if (isAtDailyLimit) {
++      toast.error('Daily limit reached');
++      return;
++    }
++
++    if (platformLimitExceeded) {
++      toast.error(`You can select up to ${maxPlatforms} platforms`);
++      return;
++    }
++
++    if (platforms.length === 0) {
++      toast.error('Please select at least one platform');
++      return;
++    }
++
++    const contentValidation = blogContentSchema.safeParse(blogContent);
++    if (!contentValidation.success) {
++      toast.error(contentValidation.error.errors[0].message);
++      return;
++    }
++
++    if (blogLengthExceeded) {
++      toast.error('Blog content exceeds your plan limit');
++      return;
++    }
++
++    try {
++      setIsLoading(true);
++      setResults(null);
++
++      const { data, error } = await edgeFunctions.blogToSns({
++        type: 'blog',
++        blogContent: blogContent.trim(),
++        platforms,
++        brandVoiceId: null,
++      });
++
++      if (error) {
++        toast.error(error);
++        return;
++      }
++
++      if (data?.status === 'error') {
++        const code = data.error?.code;
++        if (handleFunctionError(code, data.error?.message)) return;
++        return;
++      }
++
++      if (data && (data as any).data?.posts) {
++        const posts = (data as any).data.posts as GeneratedContent;
++        setResults(posts);
++        toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
++        await loadDailyUsage();
++      } else if ((data as any)?.posts) {
++        setResults((data as any).posts);
++        toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
++        await loadDailyUsage();
++      } else {
++        toast.error('Failed to generate content. Please try again.');
++      }
++    } catch (err) {
++      console.error('Generation error:', err);
++      toast.error('An error occurred while generating content');
++    } finally {
++      setIsLoading(false);
++    }
++  };
++
++  return (
++    <div className="container mx-auto px-4 py-8">
++      <div className="max-w-6xl mx-auto">
++        <div className="mb-8">
++          <h1 className="text-3xl font-bold mb-2">Blog to Social Media</h1>
++          <p className="text-muted-foreground">
++            Convert your blog posts into optimized social media content
++          </p>
++        </div>
++
++        {limits.daily_generations !== null && (
++          <Alert className={`mb-6 ${isAtDailyLimit ? 'border-destructive' : ''}`}>
++            <AlertCircle className="h-4 w-4" />
++            <AlertDescription className="flex items-center justify-between">
++              <span>
++                {isAtDailyLimit
++                  ? `Daily limit reached (${dailyUsed}/${limits.daily_generations}). Upgrade to Pro for unlimited generations!`
++                  : `${dailyUsed}/${limits.daily_generations} generations used today`
++                }
++              </span>
++              {isAtDailyLimit && (
++                <Button size="sm" asChild>
++                  <Link to="/settings">Upgrade to Pro</Link>
++                </Button>
++              )}
++            </AlertDescription>
++          </Alert>
++        )}
++
++        <div className="grid lg:grid-cols-2 gap-6">
++          <Card>
++            <CardHeader>
++              <CardTitle>Blog Content</CardTitle>
++              <CardDescription>
++                Paste your blog text to generate platform-optimized posts
++              </CardDescription>
++            </CardHeader>
++            <CardContent>
++              <form onSubmit={handleSubmit} className="space-y-6">
++                <div className="space-y-2">
++                  <div className="flex items-center justify-between">
++                    <Label htmlFor="blog-content">Blog Text</Label>
++                    {maxBlogLength && (
++                      <span className={`text-xs ${
++                        blogLengthExceeded
++                          ? 'text-destructive font-medium'
++                          : 'text-muted-foreground'
++                      }`}>
++                        {blogContent.length.toLocaleString()} / {maxBlogLength.toLocaleString()}
++                      </span>
++                    )}
++                  </div>
++                  <Textarea
++                    id="blog-content"
++                    placeholder="Paste your blog post content here..."
++                    value={blogContent}
++                    onChange={(e) => setBlogContent(e.target.value)}
++                    disabled={isLoading}
++                    rows={12}
++                    className="resize-none font-mono text-sm"
++                  />
++                  {blogLengthExceeded && (
++                    <p className="text-xs text-destructive">
++                      Content exceeds your plan limit. Upgrade to Pro for longer posts.
++                    </p>
++                  )}
++                </div>
++
++                <PlatformSelector
++                  selected={platforms}
++                  onChange={handlePlatformChange}
++                  maxPlatforms={maxPlatforms}
++                />
++
++                {maxPlatforms !== null && (
++                  <p className="text-xs text-muted-foreground -mt-1">
++                    Select up to {maxPlatforms} platforms
++                  </p>
++                )}
++
++                <Button
++                  type="submit"
++                  className="w-full"
++                  size="lg"
++                  disabled={!canGenerate || isLoading}
++                >
++                  {isLoading ? (
++                    <>
++                      <LoadingSpinner size="sm" className="mr-2" />
++                      Converting...
++                    </>
++                  ) : (
++                    <>
++                      <Sparkles className="mr-2 h-4 w-4" />
++                      Convert to Social Posts
++                    </>
++                  )}
++                </Button>
++
++                {!canGenerate && !isLoading && (
++                  <p className="text-sm text-muted-foreground text-center">
++                    {isAtDailyLimit
++                      ? 'Daily limit reached'
++                      : platforms.length === 0
++                      ? 'Select at least one platform'
++                      : blogLengthExceeded
++                      ? 'Blog content exceeds limit'
++                      : 'Paste blog content to continue'}
++                  </p>
++                )}
++              </form>
++            </CardContent>
++          </Card>
++
++          <div>
++            {isLoading && (
++              <Card className="h-full flex items-center justify-center min-h-[400px]">
++                <div className="text-center space-y-4">
++                  <LoadingSpinner size="lg" />
++                  <div>
++                    <p className="font-medium">Converting your blog post...</p>
++                    <p className="text-sm text-muted-foreground">This may take a few moments</p>
++                  </div>
++                </div>
++              </Card>
++            )}
++
++            {!isLoading && !results && (
++              <Card className="h-full flex items-center justify-center min-h-[400px]">
++                <div className="text-center space-y-4 p-8">
++                  <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto">
++                    <FileText className="h-8 w-8 text-primary" />
++                  </div>
++                  <div>
++                    <p className="font-medium text-lg mb-2">Ready to convert?</p>
++                    <p className="text-sm text-muted-foreground max-w-sm">
++                      Paste your blog content to generate platform-optimized social media posts
++                    </p>
++                  </div>
++                </div>
++              </Card>
++            )}
++
++            {!isLoading && results && (
++              <ResultCards content={results} />
++            )}
++          </div>
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/pages/BrandVoice.tsx b/src/pages/BrandVoice.tsx
+deleted file mode 100644
+index 1de49e5..0000000
+--- a/src/pages/BrandVoice.tsx
++++ /dev/null
+@@ -1,553 +0,0 @@
+-import { useEffect, useState } from 'react';
+-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+-import { useAppStore } from '@/store/useAppStore';
+-import { Plus, X, Sparkles, CheckCircle } from 'lucide-react';
+-import { Button } from '@/components/ui/button';
+-import { useNavigate } from 'react-router-dom';
+-import { Textarea } from '@/components/ui/textarea';
+-import { Input } from '@/components/ui/input';
+-import { Label } from '@/components/ui/label';
+-import { LoadingSpinner } from '@/components/LoadingSpinner';
+-import { edgeFunctions } from '@/api/edgeFunctions';
+-import { toast } from 'sonner';
+-import { Badge } from '@/components/ui/badge';
+-import { Separator } from '@/components/ui/separator';
+-import { Switch } from '@/components/ui/switch';
+-import { supabase } from '@/integrations/supabase/client';
+-import { UpgradeToProModal } from '@/components/UpgradeToProModal';
+-
+-interface ExtractedVoice {
+-  tone: string;
+-  sentenceStyle: string;
+-  vocabulary: string[];
+-  strictness: number;
+-  formatTraits?: string[];
+-}
+-
+-interface ExtractionResult {
+-  brandVoiceId: string;
+-  voice: ExtractedVoice;
+-}
+-
+-interface SavedBrandVoice {
+-  id: string;
+-  title?: string | null;
+-  voice?: ExtractedVoice;
+-}
+-
+-export default function BrandVoice() {
+-  const navigate = useNavigate();
+-  const { plan, limits, brandVoiceAllowed, brandVoiceSelection, setBrandVoice } = useAppStore();
+-  const [title, setTitle] = useState('');
+-  const [samples, setSamples] = useState<string[]>(['']);
+-  const [isLoading, setIsLoading] = useState(false);
+-  const [result, setResult] = useState<ExtractionResult | null>(
+-    brandVoiceSelection
+-      ? { brandVoiceId: brandVoiceSelection.id, voice: brandVoiceSelection.voice }
+-      : null
+-  );
+-  const [setAsDefault, setSetAsDefault] = useState(!!brandVoiceSelection);
+-  const [existingVoices, setExistingVoices] = useState<SavedBrandVoice[]>([]);
+-  const [voicesLoading, setVoicesLoading] = useState(false);
+-  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+-
+-  const brandVoiceEnabled = plan === 'pro' && limits.brand_voice && brandVoiceAllowed;
+-
+-  useEffect(() => {
+-    if (brandVoiceSelection) {
+-      setResult({ brandVoiceId: brandVoiceSelection.id, voice: brandVoiceSelection.voice });
+-      setSetAsDefault(true);
+-    } else {
+-      setSetAsDefault(false);
+-    }
+-  }, [brandVoiceSelection]);
+-
+-  useEffect(() => {
+-    if (!brandVoiceEnabled) {
+-      return;
+-    }
+-
+-    const fetchVoices = async () => {
+-      try {
+-        setVoicesLoading(true);
+-        const { data, error } = await supabase
+-          .from('brand_voices')
+-          .select('id, label, extracted_style');
+-
+-        if (error) {
+-          console.error('Error loading brand voices', error);
+-          return;
+-        }
+-
+-        const mapped = (data || []).map((voice: any) => ({
+-          id: voice.id,
+-          label: voice.label,
+-          voice: voice.extracted_style,
+-        }));
+-        setExistingVoices(mapped);
+-      } catch (err) {
+-        console.error('Error loading brand voices', err);
+-      } finally {
+-        setVoicesLoading(false);
+-      }
+-    };
+-
+-    fetchVoices();
+-  }, [brandVoiceEnabled]);
+-
+-  const addSample = () => {
+-    if (samples.length < 3) {
+-      setSamples([...samples, '']);
+-    }
+-  };
+-
+-  const removeSample = (index: number) => {
+-    if (samples.length > 1) {
+-      setSamples(samples.filter((_, i) => i !== index));
+-    }
+-  };
+-
+-  const updateSample = (index: number, value: string) => {
+-    const newSamples = [...samples];
+-    newSamples[index] = value;
+-    setSamples(newSamples);
+-  };
+-
+-  const handleSubmit = async (e: React.FormEvent) => {
+-    e.preventDefault();
+-
+-    if (!brandVoiceEnabled) {
+-      setUpgradeModalOpen(true);
+-      return;
+-    }
+-
+-    // Filter out empty samples and validate
+-    const validSamples = samples.filter(s => s.trim().length > 0);
+-
+-    if (validSamples.length === 0) {
+-      toast.error('Please provide at least one sample');
+-      return;
+-    }
+-
+-    const invalidSample = validSamples.find(s => s.length < 50);
+-    if (invalidSample) {
+-      toast.error('Each sample must be at least 50 characters');
+-      return;
+-    }
+-
+-    const tooLongSample = validSamples.find(s => s.length > 2000);
+-    if (tooLongSample) {
+-      toast.error('Each sample must be less than 2000 characters');
+-      return;
+-    }
+-
+-    try {
+-      setIsLoading(true);
+-      setResult(null);
+-
+-      const { data, error } = await edgeFunctions.extractBrandVoice({
+-        samples: validSamples,
+-        title: title.trim() || undefined,
+-      });
+-
+-      if (error) {
+-        toast.error(error);
+-        return;
+-      }
+-
+-      if (data) {
+-        const extraction = data as ExtractionResult;
+-        setResult(extraction);
+-        if (setAsDefault) {
+-          setBrandVoice({ id: extraction.brandVoiceId, voice: extraction.voice });
+-          toast.success('Saved as default brand voice');
+-        }
+-        toast.success('Brand voice extracted successfully!');
+-      } else {
+-        toast.error('Failed to extract brand voice. Please try again.');
+-      }
+-    } catch (err) {
+-      console.error('Brand voice extraction error:', err);
+-      toast.error('An error occurred while extracting brand voice');
+-    } finally {
+-      setIsLoading(false);
+-    }
+-  };
+-
+-  const handleReset = () => {
+-    setTitle('');
+-    setSamples(['']);
+-    setResult(null);
+-    setSetAsDefault(false);
+-    setBrandVoice(null);
+-  };
+-
+-  if (!brandVoiceEnabled) {
+-    return (
+-      <div className="container mx-auto px-4 py-8">
+-        <div className="max-w-4xl mx-auto">
+-          <div className="mb-8 text-center space-y-3">
+-            <h1 className="text-3xl font-bold">Brand Voice</h1>
+-            <p className="text-muted-foreground">
+-              Define and manage your unique brand voice for consistent content
+-            </p>
+-          </div>
+-
+-          <Card className="max-w-2xl mx-auto">
+-            <CardContent className="py-12">
+-              <div className="text-center space-y-6">
+-                <div className="p-4 bg-muted rounded-full w-fit mx-auto">
+-                  <Sparkles className="h-8 w-8 text-muted-foreground" />
+-                </div>
+-                <div className="space-y-2">
+-                  <h2 className="text-xl font-semibold">Brand Voice is a Pro feature.</h2>
+-                  <p className="text-muted-foreground">
+-                    Activate Pro to unlock brand voice extraction and save your voice for future generations.
+-                  </p>
+-                </div>
+-                <Button size="lg" onClick={() => setUpgradeModalOpen(true)}>
+-                  Upgrade to Pro / Enter Promo Code
+-                </Button>
+-              </div>
+-            </CardContent>
+-          </Card>
+-          <UpgradeToProModal
+-            open={upgradeModalOpen}
+-            onOpenChange={setUpgradeModalOpen}
+-            reason="Brand Voice is a Pro Feature"
+-          />
+-        </div>
+-      </div>
+-    );
+-  }
+-
+-  return (
+-    <div className="container mx-auto px-4 py-8">
+-      <div className="max-w-4xl mx-auto">
+-        <div className="mb-8">
+-          <h1 className="text-3xl font-bold mb-2">Brand Voice</h1>
+-          <p className="text-muted-foreground">
+-            Define and manage your unique brand voice for consistent content
+-          </p>
+-        </div>
+-
+-        <div className="grid lg:grid-cols-2 gap-6">
+-          {/* Input Form */}
+-          <Card>
+-            <CardHeader>
+-              <CardTitle>Extract Brand Voice</CardTitle>
+-              <CardDescription>
+-                Provide 1-3 samples of your content to extract your unique voice
+-              </CardDescription>
+-            </CardHeader>
+-            <CardContent>
+-              <form onSubmit={handleSubmit} className="space-y-6">
+-                {/* Title */}
+-                <div className="space-y-2">
+-                  <Label htmlFor="title">Voice Name (Optional)</Label>
+-                  <Input
+-                    id="title"
+-                    placeholder="e.g., Professional LinkedIn, Casual Twitter..."
+-                    value={title}
+-                    onChange={(e) => setTitle(e.target.value)}
+-                    disabled={isLoading || !brandVoiceAllowed}
+-                    maxLength={50}
+-                  />
+-                </div>
+-
+-                {/* Samples */}
+-                <div className="space-y-4">
+-                  <div className="flex items-center justify-between">
+-                    <Label>Content Samples ({samples.length}/3)</Label>
+-                    {samples.length < 3 && (
+-                      <Button
+-                        type="button"
+-                        variant="outline"
+-                        size="sm"
+-                        onClick={addSample}
+-                        disabled={isLoading || !brandVoiceAllowed}
+-                      >
+-                        <Plus className="h-4 w-4 mr-1" />
+-                        Add Sample
+-                      </Button>
+-                    )}
+-                  </div>
+-
+-                  {samples.map((sample, index) => (
+-                    <div key={index} className="space-y-2">
+-                      <div className="flex items-center justify-between">
+-                        <Label htmlFor={`sample-${index}`} className="text-sm">
+-                          Sample {index + 1}
+-                        </Label>
+-                        {samples.length > 1 && (
+-                          <Button
+-                            type="button"
+-                            variant="ghost"
+-                            size="sm"
+-                            onClick={() => removeSample(index)}
+-                            disabled={isLoading || !brandVoiceAllowed}
+-                            className="h-6 px-2"
+-                          >
+-                            <X className="h-3 w-3" />
+-                          </Button>
+-                        )}
+-                      </div>
+-                      <Textarea
+-                        id={`sample-${index}`}
+-                        placeholder="Paste a sample of your content here (50-2000 characters)..."
+-                        value={sample}
+-                        onChange={(e) => updateSample(index, e.target.value)}
+-                        disabled={isLoading || !brandVoiceAllowed}
+-                        rows={4}
+-                        className="resize-none text-sm"
+-                        maxLength={2000}
+-                      />
+-                      <p className="text-xs text-muted-foreground text-right">
+-                        {sample.length} / 2000
+-                      </p>
+-                    </div>
+-                  ))}
+-                </div>
+-
+-                <div className="flex items-center justify-between p-4 border rounded-lg">
+-                  <div className="space-y-0.5">
+-                    <Label htmlFor="default-voice" className="text-base">
+-                      Use this as my default voice
+-                    </Label>
+-                    <p className="text-sm text-muted-foreground">
+-                      Use this voice automatically in future generations
+-                    </p>
+-                  </div>
+-                  <Switch
+-                    id="default-voice"
+-                    checked={setAsDefault}
+-                    onCheckedChange={(checked) => {
+-                      setSetAsDefault(checked);
+-                      if (result) {
+-                        if (checked) {
+-                          setBrandVoice({ id: result.brandVoiceId, voice: result.voice });
+-                          toast.success('Saved as default brand voice');
+-                        } else {
+-                          setBrandVoice(null);
+-                        }
+-                      }
+-                    }}
+-                    disabled={isLoading}
+-                  />
+-                </div>
+-
+-                {/* Submit Button */}
+-                <Button
+-                  type="submit"
+-                  className="w-full"
+-                  size="lg"
+-                  disabled={isLoading || samples.every(s => !s.trim())}
+-                >
+-                  {isLoading ? (
+-                    <>
+-                      <LoadingSpinner size="sm" className="mr-2" />
+-                      Analyzing...
+-                    </>
+-                  ) : (
+-                    <>
+-                      <Sparkles className="mr-2 h-4 w-4" />
+-                      Extract Brand Voice
+-                    </>
+-                  )}
+-                </Button>
+-              </form>
+-            </CardContent>
+-          </Card>
+-
+-          {/* Results */}
+-          <div>
+-            {isLoading && (
+-              <Card className="h-full flex items-center justify-center min-h-[400px]">
+-                <div className="text-center space-y-4">
+-                  <LoadingSpinner size="lg" />
+-                  <div>
+-                    <p className="font-medium">Analyzing your content...</p>
+-                    <p className="text-sm text-muted-foreground">This may take a moment</p>
+-                  </div>
+-                </div>
+-              </Card>
+-            )}
+-
+-            {!isLoading && !result && (
+-              <Card className="h-full flex items-center justify-center min-h-[400px]">
+-                <div className="text-center space-y-4 p-8">
+-                  <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto">
+-                    <Sparkles className="h-8 w-8 text-primary" />
+-                  </div>
+-                  <div>
+-                    <p className="font-medium text-lg mb-2">Ready to extract?</p>
+-                    <p className="text-sm text-muted-foreground max-w-sm">
+-                      Provide samples of your content to analyze and extract your unique brand voice
+-                    </p>
+-                  </div>
+-                </div>
+-              </Card>
+-            )}
+-
+-            {!isLoading && result && (
+-              <Card className="h-full">
+-                <CardHeader>
+-                  <div className="flex items-start justify-between">
+-                    <div>
+-                      <CardTitle className="flex items-center gap-2">
+-                        <CheckCircle className="h-5 w-5 text-green-600" />
+-                        Brand Voice Extracted
+-                      </CardTitle>
+-                      <CardDescription>
+-                        Your unique voice has been analyzed and saved
+-                      </CardDescription>
+-                    </div>
+-                  </div>
+-                </CardHeader>
+-                <CardContent className="space-y-6">
+-                  {/* Tone */}
+-                  <div className="space-y-2">
+-                    <Label className="text-sm font-medium">Tone</Label>
+-                    <p className="text-sm bg-muted p-3 rounded-md">{result.voice.tone}</p>
+-                  </div>
+-
+-                  {/* Sentence Style */}
+-                  <div className="space-y-2">
+-                    <Label className="text-sm font-medium">Sentence Style</Label>
+-                    <p className="text-sm bg-muted p-3 rounded-md">{result.voice.sentenceStyle}</p>
+-                  </div>
+-
+-                  {/* Strictness */}
+-                  <div className="space-y-2">
+-                    <Label className="text-sm font-medium">Strictness</Label>
+-                    <div className="flex items-center gap-3">
+-                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+-                        <div
+-                          className="h-full bg-primary transition-all"
+-                          style={{ width: `${result.voice.strictness * 100}%` }}
+-                        />
+-                      </div>
+-                      <span className="text-sm font-medium w-12 text-right">
+-                        {Math.round(result.voice.strictness * 100)}%
+-                      </span>
+-                    </div>
+-                    <p className="text-xs text-muted-foreground">
+-                      How strictly to follow the extracted voice patterns
+-                    </p>
+-                  </div>
+-
+-                  {/* Vocabulary */}
+-                  <div className="space-y-2">
+-                    <Label className="text-sm font-medium">Key Vocabulary</Label>
+-                    <div className="flex flex-wrap gap-2">
+-                      {result.voice.vocabulary.map((word, index) => (
+-                        <Badge key={index} variant="secondary">
+-                          {word}
+-                        </Badge>
+-                      ))}
+-                    </div>
+-                  </div>
+-
+-                  {/* Format Traits */}
+-                  {result.voice.formatTraits && result.voice.formatTraits.length > 0 && (
+-                    <div className="space-y-2">
+-                      <Label className="text-sm font-medium">Format Traits</Label>
+-                      <div className="flex flex-wrap gap-2">
+-                        {result.voice.formatTraits.map((trait, index) => (
+-                          <Badge key={index} variant="outline">
+-                            {trait}
+-                          </Badge>
+-                        ))}
+-                      </div>
+-                    </div>
+-                  )}
+-
+-                  <Separator />
+-
+-                  {/* Actions */}
+-                  <div className="space-y-3">
+-                    <p className="text-sm text-muted-foreground">
+-                      Your brand voice has been saved and can be used when generating content.
+-                    </p>
+-                    <Button
+-                      variant="outline"
+-                      className="w-full"
+-                      onClick={handleReset}
+-                    >
+-                      Extract Another Voice
+-                    </Button>
+-                  </div>
+-                </CardContent>
+-              </Card>
+-            )}
+-          </div>
+-        </div>
+-
+-        {/* Existing Brand Voices */}
+-        <div className="mt-8 space-y-4">
+-          <div className="flex items-center justify-between">
+-            <h2 className="text-xl font-semibold">Saved Brand Voices</h2>
+-            {voicesLoading && (
+-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+-                <LoadingSpinner size="sm" />
+-                Loading
+-              </div>
+-            )}
+-          </div>
+-
+-          {existingVoices.length === 0 && !voicesLoading && (
+-            <Card>
+-              <CardContent className="py-6 text-center text-muted-foreground">
+-                No saved brand voices yet.
+-              </CardContent>
+-            </Card>
+-          )}
+-
+-          <div className="grid md:grid-cols-2 gap-4">
+-            {existingVoices.map((voice) => (
+-              <Card key={voice.id}>
+-                <CardHeader className="space-y-1">
+-                  <CardTitle className="text-lg">{voice.title || 'Untitled Voice'}</CardTitle>
+-                  <CardDescription className="text-sm">
+-                    {voice.voice?.tone || 'No tone provided'}
+-                    {voice.voice?.vocabulary?.length
+-                      ? ` • ${voice.voice.vocabulary[0]}`
+-                      : ''}
+-                  </CardDescription>
+-                </CardHeader>
+-                <CardContent className="space-y-3">
+-                  <div className="flex flex-wrap gap-2">
+-                    {voice.voice?.vocabulary?.slice(0, 3).map((word, index) => (
+-                      <Badge key={index} variant="secondary">
+-                        {word}
+-                      </Badge>
+-                    ))}
+-                  </div>
+-                  <Button
+-                    variant="outline"
+-                    className="w-full"
+-                    disabled={!voice.voice}
+-                    onClick={() => {
+-                      if (!voice.voice) return;
+-                      setBrandVoice({ id: voice.id, voice: voice.voice });
+-                      setResult({ brandVoiceId: voice.id, voice: voice.voice });
+-                      setSetAsDefault(true);
+-                      toast.success('Saved as default brand voice');
+-                    }}
+-                  >
+-                    Set as default
+-                  </Button>
+-                </CardContent>
+-              </Card>
+-            ))}
+-          </div>
+-        </div>
+-      </div>
+-      <UpgradeToProModal
+-        open={upgradeModalOpen}
+-        onOpenChange={setUpgradeModalOpen}
+-        reason="Brand Voice is a Pro Feature"
+-      />
+-    </div>
+-  );
+-}
+diff --git a/src/pages/Debug.tsx b/src/pages/Debug.tsx
+deleted file mode 100644
+index d156e9c..0000000
+--- a/src/pages/Debug.tsx
++++ /dev/null
+@@ -1,15 +0,0 @@
+-import { useEffect } from "react";
+-import { runSupabaseDiagnostics } from "@/debug/supabase-test";
+-
+-export default function Debug() {
+-  useEffect(() => {
+-    runSupabaseDiagnostics();
+-  }, []);
+-
+-  return (
+-    <div className="p-6">
+-      <h1 className="text-xl font-bold mb-4">Supabase Diagnostics</h1>
+-      <p className="opacity-70">Check DevTools console for output.</p>
+-    </div>
+-  );
+-}
+diff --git a/src/pages/Generate.tsx b/src/pages/Generate.tsx
+new file mode 100644
+index 0000000..194e925
+--- /dev/null
++++ b/src/pages/Generate.tsx
+@@ -0,0 +1,288 @@
++import { useState } from 'react';
++import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
++import { Button } from '@/components/ui/button';
++import { Input } from '@/components/ui/input';
++import { Textarea } from '@/components/ui/textarea';
++import { Label } from '@/components/ui/label';
++import { PlatformSelector } from '@/components/PlatformSelector';
++import { LoadingSpinner } from '@/components/LoadingSpinner';
++import { useAppStore } from '@/store/useAppStore';
++import { edgeFunctions } from '@/api/edgeFunctions';
++import { toast } from 'sonner';
++import { Sparkles, AlertCircle } from 'lucide-react';
++import { Alert, AlertDescription } from '@/components/ui/alert';
++import { GeneratedContent, ResultCards } from '@/components/ResultCards';
++import { Link, useNavigate } from 'react-router-dom';
++
++export default function Generate() {
++  const {
++    maxPlatforms,
++    dailyUsed,
++    limits,
++    loadDailyUsage,
++  } = useAppStore();
++
++  const navigate = useNavigate();
++
++  const [topic, setTopic] = useState('');
++  const [content, setContent] = useState('');
++  const [tone, setTone] = useState('');
++  const [platforms, setPlatforms] = useState<string[]>([]);
++  const [isLoading, setIsLoading] = useState(false);
++  const [results, setResults] = useState<GeneratedContent | null>(null);
++
++  const isAtDailyLimit = limits.daily_generations !== null && dailyUsed >= limits.daily_generations;
++  const platformLimitExceeded = maxPlatforms !== null && platforms.length > maxPlatforms;
++  const canGenerate = !isAtDailyLimit && !platformLimitExceeded && platforms.length > 0 && (topic || content);
++
++  const handlePlatformChange = (newPlatforms: string[]) => {
++    if (maxPlatforms !== null && newPlatforms.length > maxPlatforms) {
++      toast.error(`You can select up to ${maxPlatforms} platform${maxPlatforms === 1 ? '' : 's'}`);
++      return;
++    }
++    setPlatforms(newPlatforms);
++  };
++
++  const handleFunctionError = (code?: string, message?: string) => {
++    if (code === 'QUOTA_EXCEEDED') {
++      toast.error(message || 'You reached your plan limits.');
++      return true;
++    }
++    if (code === 'AUTH_REQUIRED') {
++      navigate('/auth');
++      return true;
++    }
++    if (code === 'VALIDATION_ERROR') {
++      toast.error(message || 'Please check your input and try again.');
++      return true;
++    }
++    if (code === 'PROVIDER_ERROR' || code === 'INTERNAL_ERROR') {
++      toast.error(message || 'Failed to generate content. Please try again.');
++      return true;
++    }
++    return false;
++  };
++
++  const handleSubmit = async (e: React.FormEvent) => {
++    e.preventDefault();
++
++    if (isAtDailyLimit) {
++      toast.error('Daily limit reached');
++      return;
++    }
++
++    if (platformLimitExceeded) {
++      toast.error(`You can select up to ${maxPlatforms} platforms`);
++      return;
++    }
++
++    if (platforms.length === 0) {
++      toast.error('Please select at least one platform');
++      return;
++    }
++
++    if (!topic && !content) {
++      toast.error('Please provide a topic or content');
++      return;
++    }
++
++    try {
++      setIsLoading(true);
++      setResults(null);
++
++      const { data, error } = await edgeFunctions.generatePost({
++        type: 'simple',
++        topic: topic || 'General post',
++        content: content || '',
++        tone: tone || 'professional',
++        platforms,
++        brandVoiceId: null,
++      });
++
++      if (error) {
++        toast.error(error);
++        return;
++      }
++
++      if (data?.status === 'error') {
++        const code = data.error?.code;
++        if (handleFunctionError(code, data.error?.message)) return;
++        return;
++      }
++
++      if (data && (data as any).data?.posts) {
++        const posts = (data as any).data.posts as GeneratedContent;
++        setResults(posts);
++        toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
++        await loadDailyUsage();
++      } else if ((data as any)?.posts) {
++        setResults((data as any).posts);
++        toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
++        await loadDailyUsage();
++      } else {
++        toast.error('Failed to generate content. Please try again.');
++      }
++    } catch (err) {
++      console.error('Generation error:', err);
++      toast.error('An error occurred while generating content');
++    } finally {
++      setIsLoading(false);
++    }
++  };
++
++  return (
++    <div className="container mx-auto px-4 py-8">
++      <div className="max-w-6xl mx-auto">
++        <div className="mb-8">
++          <h1 className="text-3xl font-bold mb-2">Generate Content</h1>
++          <p className="text-muted-foreground">
++            Transform your ideas into engaging social media posts
++          </p>
++        </div>
++
++        {limits.daily_generations !== null && (
++          <Alert className={`mb-6 ${isAtDailyLimit ? 'border-destructive' : ''}`}>
++            <AlertCircle className="h-4 w-4" />
++            <AlertDescription className="flex items-center justify-between">
++              <span>
++                {isAtDailyLimit
++                  ? `Daily limit reached (${dailyUsed}/${limits.daily_generations}). Upgrade to Pro for unlimited generations!`
++                  : `${dailyUsed}/${limits.daily_generations} generations used today`
++                }
++              </span>
++              {isAtDailyLimit && (
++                <Button size="sm" asChild>
++                  <Link to="/settings">Upgrade to Pro</Link>
++                </Button>
++              )}
++            </AlertDescription>
++          </Alert>
++        )}
++
++        <div className="grid lg:grid-cols-2 gap-6">
++          <Card>
++            <CardHeader>
++              <CardTitle>Create Social Media Post</CardTitle>
++              <CardDescription>
++                Generate AI-powered content optimized for each platform
++              </CardDescription>
++            </CardHeader>
++            <CardContent>
++              <form onSubmit={handleSubmit} className="space-y-6">
++                <div className="space-y-2">
++                  <Label htmlFor="topic">Topic or Title</Label>
++                  <Input
++                    id="topic"
++                    placeholder="e.g., New product launch, Company milestone..."
++                    value={topic}
++                    onChange={(e) => setTopic(e.target.value)}
++                    disabled={isLoading}
++                  />
++                </div>
++
++                <div className="space-y-2">
++                  <Label htmlFor="content">Content Details (Optional)</Label>
++                  <Textarea
++                    id="content"
++                    placeholder="Add more context, key points, or details..."
++                    value={content}
++                    onChange={(e) => setContent(e.target.value)}
++                    disabled={isLoading}
++                    rows={4}
++                    className="resize-none"
++                  />
++                </div>
++
++                <div className="space-y-2">
++                  <Label htmlFor="tone">Tone (Optional)</Label>
++                  <Input
++                    id="tone"
++                    placeholder="e.g., Professional, Casual, Friendly..."
++                    value={tone}
++                    onChange={(e) => setTone(e.target.value)}
++                    disabled={isLoading}
++                  />
++                </div>
++
++                <PlatformSelector
++                  selected={platforms}
++                  onChange={handlePlatformChange}
++                  maxPlatforms={maxPlatforms}
++                />
++
++                {maxPlatforms !== null && (
++                  <p className="text-xs text-muted-foreground -mt-1">
++                    Select up to {maxPlatforms} platforms
++                  </p>
++                )}
++
++                <Button
++                  type="submit"
++                  className="w-full"
++                  size="lg"
++                  disabled={!canGenerate || isLoading}
++                >
++                  {isLoading ? (
++                    <>
++                      <LoadingSpinner size="sm" className="mr-2" />
++                      Generating...
++                    </>
++                  ) : (
++                    <>
++                      <Sparkles className="mr-2 h-4 w-4" />
++                      Generate Posts
++                    </>
++                  )}
++                </Button>
++
++                {!canGenerate && !isLoading && (
++                  <p className="text-sm text-muted-foreground text-center">
++                    {isAtDailyLimit
++                      ? 'Daily limit reached'
++                      : platforms.length === 0
++                      ? 'Select at least one platform'
++                      : 'Add a topic or content to continue'}
++                  </p>
++                )}
++              </form>
++            </CardContent>
++          </Card>
++
++          <div>
++            {isLoading && (
++              <Card className="h-full flex items-center justify-center min-h-[400px]">
++                <div className="text-center space-y-4">
++                  <LoadingSpinner size="lg" />
++                  <div>
++                    <p className="font-medium">Generating your content...</p>
++                    <p className="text-sm text-muted-foreground">This may take a few moments</p>
++                  </div>
++                </div>
++              </Card>
++            )}
++
++            {!isLoading && !results && (
++              <Card className="h-full flex items-center justify-center min-h-[400px]">
++                <div className="text-center space-y-4 p-8">
++                  <div className="p-4 bg-primary/10 rounded-full w-fit mx-auto">
++                    <Sparkles className="h-8 w-8 text-primary" />
++                  </div>
++                  <div>
++                    <p className="font-medium text-lg mb-2">Ready to create?</p>
++                    <p className="text-sm text-muted-foreground max-w-sm">
++                      Fill in the form and select your platforms to generate optimized social media content
++                    </p>
++                  </div>
++                </div>
++              </Card>
++            )}
++
++            {!isLoading && results && (
++              <ResultCards content={results} />
++            )}
++          </div>
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/src/pages/History.tsx b/src/pages/History.tsx
+deleted file mode 100644
+index c2ad194..0000000
+--- a/src/pages/History.tsx
++++ /dev/null
+@@ -1,559 +0,0 @@
+-import { useState, useEffect, useCallback } from 'react';
+-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+-import { Button } from '@/components/ui/button';
+-import { Input } from '@/components/ui/input';
+-import { Label } from '@/components/ui/label';
+-import { Badge } from '@/components/ui/badge';
+-import { Checkbox } from '@/components/ui/checkbox';
+-import { LoadingSpinner } from '@/components/LoadingSpinner';
+-import { useAppStore } from '@/store/useAppStore';
+-import { edgeFunctions } from '@/api/edgeFunctions';
+-import { toast } from 'sonner';
+-import { format } from 'date-fns';
+-import { Calendar, Filter, X, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+-import {
+-  Dialog,
+-  DialogContent,
+-  DialogDescription,
+-  DialogHeader,
+-  DialogTitle,
+-} from '@/components/ui/dialog';
+-import { ScrollArea } from '@/components/ui/scroll-area';
+-import { Separator } from '@/components/ui/separator';
+-
+-interface Generation {
+-  id: string;
+-  source: string;
+-  content: string;
+-  outputs: any;
+-  platforms: string[];
+-  topic?: string;
+-  tone?: string;
+-  variant_type: string;
+-  created_at: string;
+-}
+-
+-interface HistoryResponse {
+-  items: Generation[];
+-  total: number;
+-  history_limit: number | null;
+-}
+-
+-const TYPE_OPTIONS = [
+-  { id: 'simple', label: 'Multi-Platform' },
+-  { id: 'blog', label: 'Blog to SNS' },
+-  { id: 'variation', label: 'Variations' },
+-];
+-
+-export default function History() {
+-  const { limits } = useAppStore();
+-  const [isLoading, setIsLoading] = useState(false);
+-  const [generations, setGenerations] = useState<Generation[]>([]);
+-  const [total, setTotal] = useState(0);
+-  const [page, setPage] = useState(0);
+-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+-  const [dateFrom, setDateFrom] = useState('');
+-  const [dateTo, setDateTo] = useState('');
+-  const [showFilters, setShowFilters] = useState(false);
+-  const [selectedGeneration, setSelectedGeneration] = useState<Generation | null>(null);
+-  const [historyData, setHistoryData] = useState<HistoryResponse | null>(null);
+-  const [noMoreResults, setNoMoreResults] = useState(false);
+-
+-  const limit = 20;
+-  const historyLimit = historyData?.history_limit ?? limits.history_limit ?? null;
+-  const maxPages = historyLimit ? Math.ceil(historyLimit / limit) : null;
+-  const loadedItems = Math.min((page + 1) * limit, total);
+-  const reachedHistoryLimit = historyLimit !== null && loadedItems >= historyLimit;
+-  const canLoadMore =
+-    !noMoreResults &&
+-    !reachedHistoryLimit &&
+-    (maxPages === null || page < maxPages - 1) &&
+-    loadedItems < total;
+-
+-  const loadGenerations = useCallback(async () => {
+-    try {
+-      setIsLoading(true);
+-      setNoMoreResults(false);
+-
+-      const { data, error } = await edgeFunctions.getGenerations({
+-        limit,
+-        offset: page * limit,
+-        types: selectedTypes.length > 0 ? selectedTypes : null,
+-        from: dateFrom ? new Date(dateFrom).toISOString() : null,
+-        to: dateTo ? new Date(dateTo + 'T23:59:59').toISOString() : null,
+-      });
+-
+-      if (error) {
+-        toast.error(error);
+-        return;
+-      }
+-
+-      if (data) {
+-        const response = data as HistoryResponse;
+-        setHistoryData(response);
+-        setGenerations(response.items);
+-        setTotal(response.total);
+-        if (response.items.length === 0) {
+-          setNoMoreResults(true);
+-        }
+-      }
+-    } catch (err) {
+-      console.error('Failed to load history:', err);
+-      toast.error('Failed to load generation history');
+-    } finally {
+-      setIsLoading(false);
+-    }
+-  }, [dateFrom, dateTo, page, selectedTypes]);
+-
+-  useEffect(() => {
+-    loadGenerations();
+-  }, [loadGenerations]);
+-
+-  const handleTypeToggle = (typeId: string) => {
+-    if (selectedTypes.includes(typeId)) {
+-      setSelectedTypes(selectedTypes.filter(t => t !== typeId));
+-    } else {
+-      setSelectedTypes([...selectedTypes, typeId]);
+-    }
+-    setPage(0);
+-    setNoMoreResults(false);
+-  };
+-
+-  const handleClearFilters = () => {
+-    setSelectedTypes([]);
+-    setDateFrom('');
+-    setDateTo('');
+-    setPage(0);
+-    setNoMoreResults(false);
+-  };
+-
+-  const getTypeLabel = (source: string) => {
+-    const option = TYPE_OPTIONS.find(opt => opt.id === source);
+-    return option?.label || source;
+-  };
+-
+-  const getInputPreview = (gen: Generation) => {
+-    if (gen.topic) return gen.topic;
+-    if (gen.content) return gen.content.slice(0, 100);
+-    return 'No input';
+-  };
+-
+-  const getOutputPreview = (gen: Generation) => {
+-    if (typeof gen.outputs === 'object' && gen.outputs !== null) {
+-      const firstKey = Object.keys(gen.outputs)[0];
+-      if (firstKey && gen.outputs[firstKey]) {
+-        const text = typeof gen.outputs[firstKey] === 'string' 
+-          ? gen.outputs[firstKey] 
+-          : JSON.stringify(gen.outputs[firstKey]);
+-        return text.slice(0, 100);
+-      }
+-    }
+-    return 'No output';
+-  };
+-
+-  return (
+-    <div className="container mx-auto px-4 py-8">
+-      <div className="max-w-6xl mx-auto">
+-        <div className="mb-8 flex items-start justify-between">
+-          <div>
+-            <h1 className="text-3xl font-bold mb-2">Generation History</h1>
+-            <p className="text-muted-foreground">
+-              View and manage your previously generated content
+-            </p>
+-          </div>
+-          <Button
+-            variant="outline"
+-            onClick={() => setShowFilters(!showFilters)}
+-          >
+-            <Filter className="h-4 w-4 mr-2" />
+-            Filters
+-            {(selectedTypes.length > 0 || dateFrom || dateTo) && (
+-              <Badge variant="secondary" className="ml-2">
+-                {selectedTypes.length + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0)}
+-              </Badge>
+-            )}
+-          </Button>
+-        </div>
+-
+-        {/* Filters */}
+-        {showFilters && (
+-          <Card className="mb-6">
+-            <CardHeader>
+-              <div className="flex items-center justify-between">
+-                <CardTitle className="text-lg">Filters</CardTitle>
+-                <Button
+-                  variant="ghost"
+-                  size="sm"
+-                  onClick={handleClearFilters}
+-                  disabled={selectedTypes.length === 0 && !dateFrom && !dateTo}
+-                >
+-                  <X className="h-4 w-4 mr-1" />
+-                  Clear All
+-                </Button>
+-              </div>
+-            </CardHeader>
+-            <CardContent className="space-y-6">
+-              {/* Type Filter */}
+-              <div className="space-y-3">
+-                <Label>Content Type</Label>
+-                <div className="grid grid-cols-3 gap-3">
+-                  {TYPE_OPTIONS.map((type) => (
+-                    <div
+-                      key={type.id}
+-                      className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-accent/50 cursor-pointer"
+-                      onClick={() => handleTypeToggle(type.id)}
+-                    >
+-                      <Checkbox
+-                        id={type.id}
+-                        checked={selectedTypes.includes(type.id)}
+-                        onCheckedChange={() => handleTypeToggle(type.id)}
+-                      />
+-                      <Label htmlFor={type.id} className="cursor-pointer">
+-                        {type.label}
+-                      </Label>
+-                    </div>
+-                  ))}
+-                </div>
+-              </div>
+-
+-              {/* Date Range */}
+-              <div className="grid sm:grid-cols-2 gap-4">
+-                <div className="space-y-2">
+-                  <Label htmlFor="date-from">From Date</Label>
+-                  <Input
+-                    id="date-from"
+-                    type="date"
+-                    value={dateFrom}
+-                    onChange={(e) => {
+-                      setDateFrom(e.target.value);
+-                      setPage(0);
+-                    }}
+-                  />
+-                </div>
+-                <div className="space-y-2">
+-                  <Label htmlFor="date-to">To Date</Label>
+-                  <Input
+-                    id="date-to"
+-                    type="date"
+-                    value={dateTo}
+-                    onChange={(e) => {
+-                      setDateTo(e.target.value);
+-                      setPage(0);
+-                    }}
+-                  />
+-                </div>
+-              </div>
+-            </CardContent>
+-          </Card>
+-        )}
+-
+-        {/* Pro Upgrade Banner */}
+-        {historyLimit !== null && total > historyLimit && (
+-          <Card className="mb-6 border-primary/50 bg-primary/5">
+-            <CardContent className="pt-6">
+-              <div className="flex items-center justify-between gap-4">
+-                <div>
+-                  <p className="font-medium mb-1">Limited History Access</p>
+-                  <p className="text-sm text-muted-foreground">
+-                    Your plan includes access to the last <strong>{historyLimit}</strong> generations.
+-                    If you want unlimited history, upgrade to Pro.
+-                  </p>
+-                </div>
+-                <Button size="sm">
+-                  Upgrade to Pro
+-                </Button>
+-              </div>
+-            </CardContent>
+-          </Card>
+-        )}
+-
+-        {reachedHistoryLimit && historyLimit !== null && (
+-          <Card className="mb-6 border-primary/30 bg-primary/5">
+-            <CardContent className="pt-6 space-y-2">
+-              <p className="text-sm font-medium">
+-                Free plan allows viewing up to {historyLimit} history items.
+-              </p>
+-              <p className="text-sm text-muted-foreground">
+-                Upgrade to Pro for unlimited history.
+-              </p>
+-            </CardContent>
+-          </Card>
+-        )}
+-
+-        {reachedHistoryLimit && historyLimit !== null && (
+-          <Card className="mb-6 border-primary/30 bg-primary/5">
+-            <CardContent className="pt-6 space-y-2">
+-              <p className="text-sm font-medium">
+-                Free plan allows viewing up to {historyLimit} history items.
+-              </p>
+-              <p className="text-sm text-muted-foreground">
+-                Upgrade to Pro for unlimited history.
+-              </p>
+-            </CardContent>
+-          </Card>
+-        )}
+-
+-        {reachedHistoryLimit && historyLimit !== null && (
+-          <Card className="mb-6 border-primary/30 bg-primary/5">
+-            <CardContent className="pt-6 space-y-2">
+-              <p className="text-sm font-medium">
+-                Free plan allows viewing up to {historyLimit} history items.
+-              </p>
+-              <p className="text-sm text-muted-foreground">
+-                Upgrade to Pro for unlimited history.
+-              </p>
+-            </CardContent>
+-          </Card>
+-        )}
+-
+-        {reachedHistoryLimit && historyLimit !== null && (
+-          <Card className="mb-6 border-primary/30 bg-primary/5">
+-            <CardContent className="pt-6 space-y-2">
+-              <p className="text-sm font-medium">
+-                Free plan allows viewing up to {historyLimit} history items.
+-              </p>
+-              <p className="text-sm text-muted-foreground">
+-                Upgrade to Pro for unlimited history.
+-              </p>
+-            </CardContent>
+-          </Card>
+-        )}
+-
+-        {/* Content */}
+-        <Card>
+-          <CardHeader>
+-            <div className="flex items-center justify-between">
+-              <div>
+-                <CardTitle>Your Content History</CardTitle>
+-                <CardDescription>
+-                  {total > 0 ? `${total} generation${total > 1 ? 's' : ''} found` : 'No generations yet'}
+-                </CardDescription>
+-              </div>
+-              {isLoading && <LoadingSpinner size="sm" />}
+-            </div>
+-          </CardHeader>
+-          <CardContent>
+-            {isLoading && generations.length === 0 ? (
+-              <div className="flex items-center justify-center py-12">
+-                <div className="text-center space-y-3">
+-                  <LoadingSpinner size="lg" />
+-                  <p className="text-sm text-muted-foreground">Loading history...</p>
+-                </div>
+-              </div>
+-            ) : generations.length === 0 ? (
+-              <div className="text-center py-12 space-y-3">
+-                <Calendar className="h-12 w-12 mx-auto text-muted-foreground/50" />
+-                <div>
+-                  <p className="font-medium">No generations found</p>
+-                  <p className="text-sm text-muted-foreground">
+-                    {selectedTypes.length > 0 || dateFrom || dateTo
+-                      ? 'Try adjusting your filters'
+-                      : 'Start creating content to see it here'}
+-                  </p>
+-                </div>
+-              </div>
+-            ) : (
+-              <div className="space-y-3">
+-                {generations.map((gen) => (
+-                  <div
+-                    key={gen.id}
+-                    className="p-4 border rounded-lg hover:border-primary/50 cursor-pointer transition-colors"
+-                    onClick={() => setSelectedGeneration(gen)}
+-                  >
+-                    <div className="flex items-start justify-between gap-4">
+-                      <div className="flex-1 space-y-2">
+-                        <div className="flex items-center gap-2 flex-wrap">
+-                          <Badge variant="secondary">{getTypeLabel(gen.source)}</Badge>
+-                          {gen.platforms.map((platform) => (
+-                            <Badge key={platform} variant="outline" className="text-xs">
+-                              {platform}
+-                            </Badge>
+-                          ))}
+-                        </div>
+-                        <div className="space-y-1">
+-                          <p className="text-sm font-medium line-clamp-1">
+-                            {getInputPreview(gen)}
+-                          </p>
+-                          <p className="text-xs text-muted-foreground line-clamp-2">
+-                            {getOutputPreview(gen)}
+-                          </p>
+-                        </div>
+-                      </div>
+-                      <div className="flex flex-col items-end gap-2">
+-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+-                          {format(new Date(gen.created_at), 'MMM d, yyyy')}
+-                        </span>
+-                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+-                      </div>
+-                    </div>
+-                  </div>
+-                ))}
+-              </div>
+-            )}
+-
+-            {/* Pagination */}
+-            {generations.length > 0 && (
+-              <div className="mt-6 flex items-center justify-between">
+-                <p className="text-sm text-muted-foreground">
+-                  Showing {page * limit + 1}-{Math.min((page + 1) * limit, total)} of {total}
+-                  {historyLimit && total > historyLimit && (
+-                    <span className="ml-1">
+-                      (limited to {historyLimit})
+-                    </span>
+-                  )}
+-                </p>
+-                <div className="flex gap-2">
+-                  <Button
+-                    variant="outline"
+-                    size="sm"
+-                    onClick={() => setPage(page - 1)}
+-                    disabled={page === 0 || isLoading}
+-                  >
+-                    Previous
+-                  </Button>
+-                  {canLoadMore && (
+-                    <Button
+-                      variant="outline"
+-                      size="sm"
+-                      onClick={() => setPage(page + 1)}
+-                      disabled={isLoading}
+-                    >
+-                      Next
+-                    </Button>
+-                  )}
+-                </div>
+-              </div>
+-            )}
+-          </CardContent>
+-        </Card>
+-
+-        {/* Detail Modal */}
+-        <GenerationDetailModal
+-          generation={selectedGeneration}
+-          onClose={() => setSelectedGeneration(null)}
+-        />
+-      </div>
+-    </div>
+-  );
+-}
+-
+-function GenerationDetailModal({
+-  generation,
+-  onClose,
+-}: {
+-  generation: Generation | null;
+-  onClose: () => void;
+-}) {
+-  const [copiedPlatform, setCopiedPlatform] = useState<string | null>(null);
+-
+-  if (!generation) return null;
+-
+-  const handleCopy = async (platform: string, text: string) => {
+-    try {
+-      await navigator.clipboard.writeText(text);
+-      setCopiedPlatform(platform);
+-      toast.success(`${platform} content copied!`);
+-      setTimeout(() => setCopiedPlatform(null), 2000);
+-    } catch (err) {
+-      toast.error('Failed to copy to clipboard');
+-    }
+-  };
+-
+-  const outputs = typeof generation.outputs === 'object' ? generation.outputs : {};
+-
+-  return (
+-    <Dialog open={!!generation} onOpenChange={onClose}>
+-      <DialogContent className="max-w-4xl max-h-[80vh]">
+-        <DialogHeader>
+-          <div className="flex items-start justify-between">
+-            <div className="space-y-1">
+-              <DialogTitle className="flex items-center gap-2">
+-                Generation Details
+-                <Badge variant="secondary" className="ml-2">
+-                  {generation.source === 'simple' ? 'Multi-Platform' : 
+-                   generation.source === 'blog' ? 'Blog to SNS' : 
+-                   'Variations'}
+-                </Badge>
+-              </DialogTitle>
+-              <DialogDescription>
+-                Created {format(new Date(generation.created_at), 'PPp')}
+-              </DialogDescription>
+-            </div>
+-          </div>
+-        </DialogHeader>
+-
+-        <ScrollArea className="max-h-[60vh] pr-4">
+-          <div className="space-y-6">
+-            {/* Input Section */}
+-            <div className="space-y-3">
+-              <div>
+-                <h3 className="font-medium mb-2">Input</h3>
+-                <div className="bg-muted p-4 rounded-md space-y-2">
+-                  {generation.topic && (
+-                    <div>
+-                      <Label className="text-xs text-muted-foreground">Topic</Label>
+-                      <p className="text-sm">{generation.topic}</p>
+-                    </div>
+-                  )}
+-                  {generation.content && (
+-                    <div>
+-                      <Label className="text-xs text-muted-foreground">Content</Label>
+-                      <p className="text-sm whitespace-pre-wrap">{generation.content}</p>
+-                    </div>
+-                  )}
+-                  {generation.tone && (
+-                    <div>
+-                      <Label className="text-xs text-muted-foreground">Tone</Label>
+-                      <p className="text-sm">{generation.tone}</p>
+-                    </div>
+-                  )}
+-                  <div>
+-                    <Label className="text-xs text-muted-foreground">Platforms</Label>
+-                    <div className="flex gap-2 mt-1">
+-                      {generation.platforms.map((platform) => (
+-                        <Badge key={platform} variant="outline">
+-                          {platform}
+-                        </Badge>
+-                      ))}
+-                    </div>
+-                  </div>
+-                </div>
+-              </div>
+-            </div>
+-
+-            <Separator />
+-
+-            {/* Outputs Section */}
+-            <div className="space-y-3">
+-              <h3 className="font-medium">Generated Content</h3>
+-              <div className="space-y-4">
+-                {Object.entries(outputs).map(([key, value]) => {
+-                  const text = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+-                  return (
+-                    <div key={key} className="border rounded-lg p-4 space-y-3">
+-                      <div className="flex items-center justify-between">
+-                        <Badge variant="secondary">{key}</Badge>
+-                        <Button
+-                          variant="ghost"
+-                          size="sm"
+-                          onClick={() => handleCopy(key, text)}
+-                        >
+-                          {copiedPlatform === key ? (
+-                            <CheckCircle className="h-4 w-4 text-green-600" />
+-                          ) : (
+-                            <Copy className="h-4 w-4" />
+-                          )}
+-                        </Button>
+-                      </div>
+-                      <p className="text-sm whitespace-pre-wrap leading-relaxed">{text}</p>
+-                    </div>
+-                  );
+-                })}
+-              </div>
+-            </div>
+-          </div>
+-        </ScrollArea>
+-      </DialogContent>
+-    </Dialog>
+-  );
+-}
+diff --git a/src/pages/Account.tsx b/src/pages/Settings.tsx
+similarity index 100%
+rename from src/pages/Account.tsx
+rename to src/pages/Settings.tsx
+diff --git a/src/store/useAppStore.ts b/src/store/useAppStore.ts
+index 69f7706..15d7631 100644
+--- a/src/store/useAppStore.ts
++++ b/src/store/useAppStore.ts
+@@ -6,43 +6,24 @@ export type Plan = 'free' | 'pro';
+ export interface LimitsConfig {
+   daily_generations: number | null;
+   max_platforms_per_request: number | null;
+-  brand_voice: boolean;
+   blog_to_sns: boolean;
+   max_blog_length: number | null;
+-  variations_per_request: number | null;
+-  history_limit: number | null;
+   priority_routing: boolean;
+ }
+ 
+-export interface BrandVoiceSelection {
+-  id: string;
+-  label?: string;
+-  voice: {
+-    tone: string;
+-    sentenceStyle: string;
+-    vocabulary: string[];
+-    strictness: number;
+-    formatTraits?: string[];
+-  };
+-}
+-
+ interface AppState {
+   user: any | null;
+   plan: Plan;
+   limits: LimitsConfig;
+   dailyUsed: number;
+   loading: boolean;
+-  brandVoiceSelection: BrandVoiceSelection | null;
+-  
++
+   // Computed getters
+-  brandVoiceAllowed: boolean;
+   maxPlatforms: number | null;
+   maxBlogLength: number | null;
+-  variationsAllowed: number | null;
+-  
++
+   // Actions
+   setUser: (user: any) => void;
+-  setBrandVoice: (selection: BrandVoiceSelection | null) => void;
+   loadProfileAndLimits: () => Promise<void>;
+   loadDailyUsage: () => Promise<void>;
+   refreshAfterBilling: () => Promise<void>;
+@@ -51,23 +32,17 @@ interface AppState {
+ 
+ export const DEFAULT_LIMITS: LimitsConfig = {
+   daily_generations: 5,
+-  max_platforms_per_request: 1,
+-  brand_voice: false,
++  max_platforms_per_request: 3,
+   blog_to_sns: true,
+   max_blog_length: 2000,
+-  variations_per_request: 1,
+-  history_limit: 50,
+   priority_routing: false,
+ };
+ 
+ export const PRO_LIMITS: LimitsConfig = {
+   daily_generations: null,
+-  max_platforms_per_request: 6,
+-  brand_voice: true,
++  max_platforms_per_request: 3,
+   blog_to_sns: true,
+   max_blog_length: null,
+-  variations_per_request: null,
+-  history_limit: null,
+   priority_routing: true,
+ };
+ 
+@@ -77,50 +52,16 @@ export const useAppStore = create<AppState>((set, get) => ({
+   limits: DEFAULT_LIMITS,
+   dailyUsed: 0,
+   loading: true,
+-  brandVoiceSelection:
+-    typeof window !== 'undefined'
+-      ? (() => {
+-          try {
+-            const stored = localStorage.getItem('defaultBrandVoiceSelection');
+-            return stored ? (JSON.parse(stored) as BrandVoiceSelection) : null;
+-          } catch (err) {
+-            console.error('Failed to read stored brand voice selection', err);
+-            return null;
+-          }
+-        })()
+-      : null,
+-  
++
+   // Computed getters
+-  get brandVoiceAllowed() {
+-    return get().limits.brand_voice;
+-  },
+   get maxPlatforms() {
+     return get().limits.max_platforms_per_request;
+   },
+   get maxBlogLength() {
+     return get().limits.max_blog_length;
+   },
+-  get variationsAllowed() {
+-    return get().limits.variations_per_request;
+-  },
+-  
+-  setUser: (user) => set({ user }),
+-
+-  setBrandVoice: (selection) => {
+-    try {
+-      if (typeof window !== 'undefined') {
+-        if (selection) {
+-          localStorage.setItem('defaultBrandVoiceSelection', JSON.stringify(selection));
+-        } else {
+-          localStorage.removeItem('defaultBrandVoiceSelection');
+-        }
+-      }
+-    } catch (err) {
+-      console.error('Failed to persist brand voice selection', err);
+-    }
+ 
+-    set({ brandVoiceSelection: selection });
+-  },
++  setUser: (user) => set({ user }),
+   
+   loadProfileAndLimits: async () => {
+     try {
+@@ -194,21 +135,12 @@ export const useAppStore = create<AppState>((set, get) => ({
+   },
+   
+   reset: () => {
+-    try {
+-      if (typeof window !== 'undefined') {
+-        localStorage.removeItem('defaultBrandVoiceSelection');
+-      }
+-    } catch (err) {
+-      console.error('Failed to clear stored brand voice selection', err);
+-    }
+-    
+     set({
+       user: null,
+       plan: 'free',
+       limits: DEFAULT_LIMITS,
+       dailyUsed: 0,
+       loading: false,
+-      brandVoiceSelection: null,
+     });
+   },
+ }));
+diff --git a/supabase/functions/_shared/cors.ts b/supabase/functions/_shared/cors.ts
+index c911385..0aa66c6 100644
+--- a/supabase/functions/_shared/cors.ts
++++ b/supabase/functions/_shared/cors.ts
+@@ -1,15 +1,17 @@
+ // Production and local development origins
+ const allowedOrigins = [
+   "https://idea2sns.space",
++  "https://www.idea2sns.space",
++  "https://idea2sns.netlify.app",
+   "http://localhost:8080",
+   "http://localhost:5173",
+ ];
+ 
+ // Using wildcard for now; can switch to origin-based logic later
+-const fallbackOrigin = "*";
++const fallbackOrigin = allowedOrigins[0];
+ 
+ export const corsHeaders = {
+-  "Access-Control-Allow-Origin": fallbackOrigin,
++  "Access-Control-Allow-Origin": "*",
+   "Access-Control-Allow-Headers": "authorization, x-client-info, content-type",
+   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+ };
+diff --git a/supabase/functions/_shared/platformRules.ts b/supabase/functions/_shared/platformRules.ts
+index 32fd8ad..2c86f63 100644
+--- a/supabase/functions/_shared/platformRules.ts
++++ b/supabase/functions/_shared/platformRules.ts
+@@ -1,6 +1,6 @@
+ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+ 
+-export const allowedPlatforms = ["reddit", "threads", "instagram", "twitter", "pinterest", "facebook", "linkedin", "youtube"] as const;
++export const allowedPlatforms = ["twitter", "linkedin", "threads"] as const;
+ 
+ export type Platform = typeof allowedPlatforms[number];
+ 
+@@ -9,25 +9,12 @@ export const platformEnum = z.enum(allowedPlatforms);
+ export const platformModelMap: Record<string, { provider: "anthropic" | "openai"; model: string }> = {
+   twitter: { provider: "anthropic", model: "claude-3-5-sonnet-latest" },
+   x: { provider: "anthropic", model: "claude-3-5-sonnet-latest" },
+-  threads: { provider: "openai", model: "gpt-4.1-mini" },
+-  instagram: { provider: "openai", model: "gpt-4.1-mini" },
+   linkedin: { provider: "openai", model: "gpt-4.1-mini" },
+-  tiktok: { provider: "anthropic", model: "claude-3-5-sonnet-latest" },
+-  youtube: { provider: "openai", model: "gpt-4.1-mini" },
+-  reddit: { provider: "openai", model: "gpt-4.1-mini" },
+-  pinterest: { provider: "openai", model: "gpt-4.1-mini" },
+-  facebook: { provider: "openai", model: "gpt-4.1-mini" },
++  threads: { provider: "openai", model: "gpt-4.1-mini" },
+ };
+ 
+ export const platformRules: Record<Platform, string> = {
+   twitter: "- Max 280 characters.\n- Punchy, direct.\n- 1-2 relevant hashtags.\n- Optional subtle CTA or question.",
+-  instagram:
+-    "- Hook in first line.\n- Conversational and visual.\n- 3-5 relevant hashtags at end.\n- Use line breaks for readability.",
+-  reddit:
+-    "- Story-driven, authentic, non-promotional.\n- Encourage discussion.\n- Respect subreddit norms.\n- Clear takeaway.",
+-  threads: "- Conversational, first-person.\n- Multi-line friendly.\n- Encourage replies.\n- Keep it light.",
+-  pinterest: "- Keyword-rich, action oriented.\n- Inspire saving/clicking.\n- 2-4 hashtags.\n- 500 characters max.",
+-  facebook: "- Engaging, community-focused.\n- 1-3 paragraphs.\n- Encourage comments/shares.\n- Use emojis sparingly.",
+   linkedin: "- Professional tone, value-driven.\n- Share insights or expertise.\n- 1-3 paragraphs.\n- Industry-relevant hashtags.",
+-  youtube: "- Compelling description.\n- Front-load key info.\n- Call to action (like, subscribe).\n- Relevant keywords.",
++  threads: "- Conversational, first-person.\n- Multi-line friendly.\n- Encourage replies.\n- Keep it light.",
+ };

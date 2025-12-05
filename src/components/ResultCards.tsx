@@ -11,18 +11,6 @@ interface ResultCardsProps {
 }
 
 const PLATFORM_CONFIG = {
-  facebook: {
-    name: "Facebook",
-    icon: "📘",
-    color: "border-blue-500",
-    bgColor: "bg-blue-500/10",
-  },
-  instagram: {
-    name: "Instagram",
-    icon: "📷",
-    color: "border-pink-500",
-    bgColor: "bg-pink-500/10",
-  },
   linkedin: {
     name: "LinkedIn",
     icon: "💼",
@@ -30,7 +18,7 @@ const PLATFORM_CONFIG = {
     bgColor: "bg-blue-700/10",
   },
   twitter: {
-    name: "Twitter",
+    name: "Twitter (X)",
     icon: "🐦",
     color: "border-sky-500",
     bgColor: "bg-sky-500/10",
@@ -40,12 +28,6 @@ const PLATFORM_CONFIG = {
     icon: "🧵",
     color: "border-slate-700",
     bgColor: "bg-slate-700/10",
-  },
-  youtube: {
-    name: "YouTube",
-    icon: "📹",
-    color: "border-red-600",
-    bgColor: "bg-red-600/10",
   },
 } as const;
 

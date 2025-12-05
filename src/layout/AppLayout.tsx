@@ -60,20 +60,17 @@ export const AppLayout = () => {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <Link to="/create" className="flex items-center gap-2 font-bold text-xl">
+            <Link to="/" className="flex items-center gap-2 font-bold text-xl">
               <Sparkles className="h-6 w-6 text-primary" />
               <span>idea2sns</span>
             </Link>
-            
+
             <nav className="hidden md:flex items-center gap-4">
-              <Link to="/create">
-                <Button variant="ghost" size="sm">Create</Button>
+              <Link to="/generate">
+                <Button variant="ghost" size="sm">Generate</Button>
               </Link>
-              <Link to="/history">
-                <Button variant="ghost" size="sm">History</Button>
-              </Link>
-              <Link to="/brand-voice">
-                <Button variant="ghost" size="sm">Brand Voice</Button>
+              <Link to="/blog-to-sns">
+                <Button variant="ghost" size="sm">Blog to SNS</Button>
               </Link>
             </nav>
           </div>
@@ -87,7 +84,7 @@ export const AppLayout = () => {
             {/* Upgrade Button */}
             {!isPro && (
               <Button size="sm" variant="default" asChild>
-                <Link to="/account">
+                <Link to="/settings">
                   <Sparkles className="h-4 w-4 mr-1" />
                   Upgrade to Pro
                 </Link>
@@ -112,7 +109,7 @@ export const AppLayout = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/account">Account Settings</Link>
+                  <Link to="/settings">Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>

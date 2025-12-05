@@ -14,7 +14,10 @@
       "Bash(gh repo clone:*)",
       "Bash(printf:*)",
       "Bash(git credential:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git apply:*)",
+      "Bash(cat:*)",
+      "Bash(git reset:*)"
     ],
     "deny": [],
     "ask": []
