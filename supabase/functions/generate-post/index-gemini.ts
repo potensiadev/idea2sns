@@ -8,42 +8,43 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const simpleGenerateSchema = z.object({
-  type: z.literal("simple"),
-  topic: z.string().min(1).max(200),
-  content: z.string().min(1).max(3000),
-  tone: z.string().min(1).max(50),
-  platforms: z
-    .array(z.enum(["reddit", "threads", "instagram", "twitter", "pinterest"]))
-    .min(1)
-    .max(5),
-});
+const simpleGenerateSchema = z
+  .object({
+    type: z.literal("simple"),
+    topic: z.string().max(200).optional(),
+    content: z.string().max(3000).optional(),
+    tone: z.string().min(1).max(50),
+    platforms: z
+      .array(z.enum(["twitter", "linkedin", "threads"]))
+      .min(1)
+      .max(3),
+  })
+  .superRefine((val, ctx) => {
+    const hasTopic = Boolean(val.topic && val.topic.trim());
+    const hasContent = Boolean(val.content && val.content.trim());
+    if (!hasTopic && !hasContent) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Either topic or content must be provided",
+        path: ["topic"],
+      });
+    }
+  });
 
 const blogGenerateSchema = z.object({
   type: z.literal("blog"),
   blogContent: z.string().min(1).max(10000),
   keyMessage: z.string().max(500).optional(),
   platforms: z
-    .array(z.enum(["reddit", "threads", "instagram", "twitter", "pinterest"]))
+    .array(z.enum(["twitter", "linkedin", "threads"]))
     .min(1)
-    .max(5),
+    .max(3),
 });
 
 const generateRequestSchema = z.discriminatedUnion("type", [simpleGenerateSchema, blogGenerateSchema]);
 
 const PLATFORM_PROMPTS = {
-  reddit: `Write a Reddit post that feels like it was created by someone sharing a real experience with the community. 
-Follow these guidelines:
-- Open with a relatable hook based on an authentic moment or personal observation
-- Maintain a conversational, down-to-earth tone that fits Reddit culture
-- Provide concrete details, examples, or context in the body to make the story feel grounded
-- Close with a natural, curiosity-driven question that encourages discussion
-- Length should be 200–400 words, informative without unnecessary filler
-- Absolutely avoid anything promotional, sales-driven, or overly polished
-- Do not repeat wording or structure from any other platform output
-- Never use # or ## symbols unless it's for an actual hashtag (which Reddit does not require)`,
-
-  threads: `Write a Threads post that captures a quick, punchy thought inspired by the source content. 
+  threads: `Write a Threads post that captures a quick, punchy thought inspired by the source content.
 Follow these guidelines:
 - Keep it extremely short (50–100 characters ideally)
 - Use a relaxed, conversational tone that feels spontaneous
@@ -60,10 +61,10 @@ Follow these guidelines:
 - Use a warm, aesthetic, or inspiring tone throughout
 - Structure the caption into 3–4 short paragraphs with intentional line breaks
 - Place emojis naturally within sentences or at the end of lines (not overused)
-- Finish with 20–30 relevant hashtags mixing both popular and niche keywords
-- Ensure the caption is easy to skim and visually pleasant
-- Do not reuse sentence structures from other platform outputs
-- Do not use # or ## except for hashtags at the end`,
+-- Finish with 20–30 relevant hashtags mixing both popular and niche keywords
+-- Ensure the caption is easy to skim and visually pleasant
+-- Do not reuse sentence structures from other platform outputs
+-- Do not use # or ## except for hashtags at the end`,
 
   twitter: `Write a Twitter/X post that delivers one sharp insight from the content.
 Follow these guidelines:
@@ -76,16 +77,13 @@ Follow these guidelines:
 - Do not reuse phrasing from any other platform outputs
 - Do not use # or ## except for hashtags`,
 
-  pinterest: `Write a Pinterest description that helps users understand, save, and use the content.
+  linkedin: `Write a LinkedIn post that conveys a practical professional takeaway.
 Follow these guidelines:
-- Begin with a keyword-rich, clear title of about 60 characters
-- Provide a detailed description (150–500 words) that feels educational and helpful
-- Naturally incorporate SEO-friendly keywords throughout the description
-- Focus on actionability: what someone could learn, try, or apply
-- End with 5–10 keyword tags (not hashtags, no # symbol)
-- Aim for a warm, informative tone that encourages saving or sharing
-- Ensure the writing differs in style from all other platform outputs
-- Never use # or ## anywhere in the body`,
+- Keep it concise (1–3 short paragraphs)
+- Use credible, confident language with a helpful tone
+- Include 1–3 relevant hashtags if they add clarity
+- Invite thoughtful discussion without sounding salesy
+- Avoid reusing exact phrases from other platform outputs`,
 };
 
 serve(async (req) => {
@@ -160,7 +158,7 @@ serve(async (req) => {
     // Branch based on request type
     if (requestData.type === "simple") {
       // Original simple generation logic
-      const { topic, content, tone } = requestData;
+      const { topic = "", content = "", tone } = requestData;
 
       for (const platform of platforms) {
         const prompt = PLATFORM_PROMPTS[platform as keyof typeof PLATFORM_PROMPTS];
