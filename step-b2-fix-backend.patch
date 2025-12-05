@@ -1,0 +1,579 @@
+diff --git a/.env.example b/.env.example
+index 6f88eb8..83e2727 100644
+--- a/.env.example
++++ b/.env.example
+@@ -1,16 +1,16 @@
+ # Supabase Configuration
+ # Get these values from your Supabase project dashboard: https://app.supabase.com
+ 
+-VITE_SUPABASE_URL=https://voalboudivbezmjlzicd.supabase.co
+-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvYWxib3VkaXZiZXptamx6aWNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1MTg0NTksImV4cCI6MjA4MDA5NDQ1OX0.tB_kktKJ50umNOQApC5uWNVFaxa4a8f4iM4R64F37JY
++VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
++VITE_SUPABASE_ANON_KEY=your-public-anon-key
+ 
+ # Application Environment
+ VITE_APP_ENV=production
+ 
+ # Server-side keys (never commit real values)
+-SUPABASE_URL=https://voalboudivbezmjlzicd.supabase.co
+-SUPABASE_ANON_KEY=
+-SUPABASE_SERVICE_ROLE_KEY=
++SUPABASE_URL=https://YOUR-PROJECT.supabase.co
++SUPABASE_ANON_KEY=your-public-anon-key
++SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+ 
+ # IMPORTANT:
+ # 1. Copy this file to '.env' and fill in your actual values
+diff --git a/supabase/functions/_shared/cors.ts b/supabase/functions/_shared/cors.ts
+index 0aa66c6..fc101ba 100644
+--- a/supabase/functions/_shared/cors.ts
++++ b/supabase/functions/_shared/cors.ts
+@@ -7,18 +7,17 @@ const allowedOrigins = [
+   "http://localhost:5173",
+ ];
+ 
+-// Using wildcard for now; can switch to origin-based logic later
+ const fallbackOrigin = allowedOrigins[0];
+ 
+-export const corsHeaders = {
+-  "Access-Control-Allow-Origin": "*",
+-  "Access-Control-Allow-Headers": "authorization, x-client-info, content-type",
+-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+-};
+-
+-// Helper function for future origin-based CORS
+ export function buildCorsHeaders(requestOrigin?: string | null): Record<string, string> {
+   const allowOrigin = requestOrigin && allowedOrigins.includes(requestOrigin) ? requestOrigin : fallbackOrigin;
+ 
+-  return { ...corsHeaders, "Access-Control-Allow-Origin": allowOrigin };
++  return {
++    "Access-Control-Allow-Origin": allowOrigin,
++    "Access-Control-Allow-Headers": "authorization, x-client-info, content-type",
++    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
++  };
+ }
++
++export const corsHeaders = buildCorsHeaders();
++export { allowedOrigins };
+diff --git a/supabase/functions/_shared/promptBuilder.ts b/supabase/functions/_shared/promptBuilder.ts
+index e6cff07..f4903d8 100644
+--- a/supabase/functions/_shared/promptBuilder.ts
++++ b/supabase/functions/_shared/promptBuilder.ts
+@@ -19,37 +19,40 @@ export type RequestShape =
+       content: string;
+       tone: string;
+       platforms: Platform[];
+-      brandVoiceId?: string | null;
+     }
+   | {
+       type: "blog";
+       blogContent: string;
+       platforms: Platform[];
+-      brandVoiceId?: string | null;
+     };
+ 
+ export type PromptBuilderInput = {
+   request: RequestShape;
+   platformRules: Record<Platform, string>;
+-  brandVoice: BrandVoice;
++  brandVoice?: BrandVoice;
+ };
+ 
+ export function promptBuilder({ request, platformRules, brandVoice }: PromptBuilderInput): string {
++  const toneCue = request.type === "simple" && request.tone ? `Tone: ${request.tone}\n` : "";
+   const brandVoiceCue = brandVoice?.extracted_style
+-    ? `\nBrand voice hints (apply across all outputs): ${JSON.stringify(brandVoice.extracted_style)}`
++    ? `\n(Brand voice context was provided but is currently unused)`
+     : "";
+ 
+   if (request.type === "simple") {
+-    return `You are an expert social media strategist. Generate JSON with one entry per requested platform key, each containing\na platform-optimized post.\n` +
++    return (
++      `You are an expert social media strategist. Generate JSON with one entry per requested platform key, each containing\n` +
+       `Rules per platform (strictly follow): ${JSON.stringify(platformRules)}${brandVoiceCue}\n` +
+-      `Input:\n- Topic: ${request.topic}\n- Supporting content: ${request.content}\n- Tone: ${request.tone}\n- Platforms: ${request.platforms.join(", ")}.\n` +
+-      `Return JSON: { "platform": "post text" } with exactly the requested platform keys and nothing else.`;
++      `Input:\n- Topic: ${request.topic}\n- Supporting content: ${request.content}\n- ${toneCue}- Platforms: ${request.platforms.join(", ")}.\n` +
++      `Return JSON: { "platform": "post text" } with exactly the requested platform keys and nothing else.`
++    );
+   }
+ 
+-  return `You are an expert social media strategist. Convert the following blog content into platform-optimized posts.\n` +
++  return (
++    `You are an expert social media strategist. Convert the following blog content into platform-optimized posts.\n` +
+     `Rules per platform: ${JSON.stringify(platformRules)}${brandVoiceCue}\n` +
+     `Blog content:\n${request.blogContent}\n` +
+-    `Return JSON: { "platform": "post text" } with exactly the requested platform keys.`;
++    `Return JSON: { "platform": "post text" } with exactly the requested platform keys.`
++  );
+ }
+ 
+ export type VariationPromptInput = { baseText: string; style: VariationStyle; brandVoice: BrandVoice };
+@@ -79,8 +82,7 @@ export function variationPromptBuilder({ baseText, style, brandVoice }: Variatio
+ 
+ export function brandVoiceAnalysisPromptBuilder({ samples }: BrandVoiceAnalysisPromptInput): string {
+   const joined = samples
+-    .map((sample, index) => `Sample ${index + 1}:
+-${sample}`)
++    .map((sample, index) => `Sample ${index + 1}: ${sample}`)
+     .join("\n\n");
+ 
+   return (
+@@ -88,13 +90,7 @@ ${sample}`)
+     `\nFocus on reusable patterns, not specific content. Avoid hallucinations.` +
+     `\nSamples:\n${joined}\n` +
+     `Return strict JSON with this shape:\n` +
+-    `{
+-  "tone": string, // tone adjectives and mood
+-  "sentenceStyle": string, // sentence length, structure, cadence
+-  "vocabulary": string, // notable vocabulary patterns, jargon, or phrasing
+-  "format": string, // formatting preferences (bullets, line breaks, emojis)
+-  "strictness": number // 0-1 representing how strictly to enforce this voice
+-}` +
++    `{\n  "tone": string, // tone adjectives and mood\n  "sentenceStyle": string, // sentence length, structure, cadence\n  "vocabulary": string, // notable vocabulary patterns, jargon, or phrasing\n  "format": string, // formatting preferences (bullets, line breaks, emojis)\n  "strictness": number // 0-1 representing how strictly to enforce this voice\n}` +
+     `\nDo not include any other commentary. Respond with JSON only.`
+   );
+ }
+diff --git a/supabase/functions/blog-to-sns/index.ts b/supabase/functions/blog-to-sns/index.ts
+index b1b4ae0..63a9254 100644
+--- a/supabase/functions/blog-to-sns/index.ts
++++ b/supabase/functions/blog-to-sns/index.ts
+@@ -5,7 +5,7 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+ import { aiRouter } from "../_shared/aiRouter.ts";
+ import { jsonError, jsonOk } from "../_shared/errors.ts";
+ import { corsHeaders } from "../_shared/cors.ts";
+-import { BrandVoice, promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
++import { promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
+ import { createSupabaseClient, getAuthenticatedUser } from "../_shared/supabaseClient.ts";
+ import { platformEnum, platformModelMap, platformRules, type Platform } from "../_shared/platformRules.ts";
+ import { usageGuard } from "../_shared/usageGuard.ts";
+@@ -15,9 +15,8 @@ const requestSchema = z
+     sourceType: z.enum(["url", "text"]),
+     url: z.string().url().optional(),
+     blogContent: z.string().min(1).optional(),
+-    platforms: z.array(platformEnum).min(1).max(5),
++    platforms: z.array(platformEnum).min(1).max(3),
+     tone: z.string().min(1).optional(),
+-    brandVoiceId: z.string().uuid().nullable().optional(),
+   })
+   .superRefine((val, ctx) => {
+     if (val.sourceType === "url" && !val.url) {
+@@ -28,27 +27,6 @@ const requestSchema = z
+     }
+   });
+ 
+-async function resolveBrandVoice(
+-  supabase: SupabaseClient,
+-  userId: string,
+-  brandVoiceId?: string | null,
+-): Promise<BrandVoice> {
+-  if (!brandVoiceId) return null;
+-
+-  const { data, error } = await supabase
+-    .from("brand_voices")
+-    .select("extracted_style,label")
+-    .eq("id", brandVoiceId)
+-    .eq("user_id", userId)
+-    .maybeSingle();
+-
+-  if (error) {
+-    throw new Error(`Failed to load brand voice: ${error.message}`);
+-  }
+-
+-  return data ?? null;
+-}
+-
+ function parsePosts(raw: string, requestedPlatforms: Platform[]) {
+   try {
+     const parsed = JSON.parse(raw);
+@@ -132,7 +110,6 @@ async function handler(req: Request) {
+       await usageGuard(supabase, user.id, "blog_to_sns", {
+         platformCount: payload.platforms.length,
+         blogLength: sourceContent.length,
+-        brandVoiceRequested: Boolean(payload.brandVoiceId),
+       });
+     } catch (error) {
+       if (error instanceof Response) {
+@@ -142,14 +119,6 @@ async function handler(req: Request) {
+       return jsonError("INTERNAL_ERROR", "Failed to enforce usage limits", 500);
+     }
+ 
+-    let brandVoice: BrandVoice = null;
+-    try {
+-      brandVoice = await resolveBrandVoice(supabase, user.id, payload.brandVoiceId ?? null);
+-    } catch (error) {
+-      console.error(error);
+-      return jsonError("INTERNAL_ERROR", "Failed to load brand voice", 500);
+-    }
+-
+     let summary = sourceContent;
+     try {
+       const summaryPrompt =
+@@ -181,10 +150,9 @@ async function handler(req: Request) {
+         type: "blog",
+         blogContent: payload.tone ? `Tone hint: ${payload.tone}\n\n${summary}` : summary,
+         platforms: [platform],
+-        brandVoiceId: payload.brandVoiceId ?? null,
+       };
+ 
+-      const generationPrompt = promptBuilder({ request: requestShape, platformRules: rules, brandVoice });
++      const generationPrompt = promptBuilder({ request: requestShape, platformRules: rules });
+ 
+       let aiResult;
+       try {
+diff --git a/supabase/functions/generate-post/index-gemini.ts b/supabase/functions/generate-post/index-gemini.ts
+index c9eb824..cd1dd94 100644
+--- a/supabase/functions/generate-post/index-gemini.ts
++++ b/supabase/functions/generate-post/index-gemini.ts
+@@ -8,42 +8,43 @@ const corsHeaders = {
+   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+ };
+ 
+-const simpleGenerateSchema = z.object({
+-  type: z.literal("simple"),
+-  topic: z.string().min(1).max(200),
+-  content: z.string().min(1).max(3000),
+-  tone: z.string().min(1).max(50),
+-  platforms: z
+-    .array(z.enum(["reddit", "threads", "instagram", "twitter", "pinterest"]))
+-    .min(1)
+-    .max(5),
+-});
++const simpleGenerateSchema = z
++  .object({
++    type: z.literal("simple"),
++    topic: z.string().max(200).optional(),
++    content: z.string().max(3000).optional(),
++    tone: z.string().min(1).max(50),
++    platforms: z
++      .array(z.enum(["twitter", "linkedin", "threads"]))
++      .min(1)
++      .max(3),
++  })
++  .superRefine((val, ctx) => {
++    const hasTopic = Boolean(val.topic && val.topic.trim());
++    const hasContent = Boolean(val.content && val.content.trim());
++    if (!hasTopic && !hasContent) {
++      ctx.addIssue({
++        code: "custom",
++        message: "Either topic or content must be provided",
++        path: ["topic"],
++      });
++    }
++  });
+ 
+ const blogGenerateSchema = z.object({
+   type: z.literal("blog"),
+   blogContent: z.string().min(1).max(10000),
+   keyMessage: z.string().max(500).optional(),
+   platforms: z
+-    .array(z.enum(["reddit", "threads", "instagram", "twitter", "pinterest"]))
++    .array(z.enum(["twitter", "linkedin", "threads"]))
+     .min(1)
+-    .max(5),
++    .max(3),
+ });
+ 
+ const generateRequestSchema = z.discriminatedUnion("type", [simpleGenerateSchema, blogGenerateSchema]);
+ 
+ const PLATFORM_PROMPTS = {
+-  reddit: `Write a Reddit post that feels like it was created by someone sharing a real experience with the community. 
+-Follow these guidelines:
+-- Open with a relatable hook based on an authentic moment or personal observation
+-- Maintain a conversational, down-to-earth tone that fits Reddit culture
+-- Provide concrete details, examples, or context in the body to make the story feel grounded
+-- Close with a natural, curiosity-driven question that encourages discussion
+-- Length should be 200–400 words, informative without unnecessary filler
+-- Absolutely avoid anything promotional, sales-driven, or overly polished
+-- Do not repeat wording or structure from any other platform output
+-- Never use # or ## symbols unless it's for an actual hashtag (which Reddit does not require)`,
+-
+-  threads: `Write a Threads post that captures a quick, punchy thought inspired by the source content. 
++  threads: `Write a Threads post that captures a quick, punchy thought inspired by the source content.
+ Follow these guidelines:
+ - Keep it extremely short (50–100 characters ideally)
+ - Use a relaxed, conversational tone that feels spontaneous
+@@ -60,10 +61,10 @@ Follow these guidelines:
+ - Use a warm, aesthetic, or inspiring tone throughout
+ - Structure the caption into 3–4 short paragraphs with intentional line breaks
+ - Place emojis naturally within sentences or at the end of lines (not overused)
+-- Finish with 20–30 relevant hashtags mixing both popular and niche keywords
+-- Ensure the caption is easy to skim and visually pleasant
+-- Do not reuse sentence structures from other platform outputs
+-- Do not use # or ## except for hashtags at the end`,
++-- Finish with 20–30 relevant hashtags mixing both popular and niche keywords
++-- Ensure the caption is easy to skim and visually pleasant
++-- Do not reuse sentence structures from other platform outputs
++-- Do not use # or ## except for hashtags at the end`,
+ 
+   twitter: `Write a Twitter/X post that delivers one sharp insight from the content.
+ Follow these guidelines:
+@@ -76,16 +77,13 @@ Follow these guidelines:
+ - Do not reuse phrasing from any other platform outputs
+ - Do not use # or ## except for hashtags`,
+ 
+-  pinterest: `Write a Pinterest description that helps users understand, save, and use the content.
++  linkedin: `Write a LinkedIn post that conveys a practical professional takeaway.
+ Follow these guidelines:
+-- Begin with a keyword-rich, clear title of about 60 characters
+-- Provide a detailed description (150–500 words) that feels educational and helpful
+-- Naturally incorporate SEO-friendly keywords throughout the description
+-- Focus on actionability: what someone could learn, try, or apply
+-- End with 5–10 keyword tags (not hashtags, no # symbol)
+-- Aim for a warm, informative tone that encourages saving or sharing
+-- Ensure the writing differs in style from all other platform outputs
+-- Never use # or ## anywhere in the body`,
++- Keep it concise (1–3 short paragraphs)
++- Use credible, confident language with a helpful tone
++- Include 1–3 relevant hashtags if they add clarity
++- Invite thoughtful discussion without sounding salesy
++- Avoid reusing exact phrases from other platform outputs`,
+ };
+ 
+ serve(async (req) => {
+@@ -160,7 +158,7 @@ serve(async (req) => {
+     // Branch based on request type
+     if (requestData.type === "simple") {
+       // Original simple generation logic
+-      const { topic, content, tone } = requestData;
++      const { topic = "", content = "", tone } = requestData;
+ 
+       for (const platform of platforms) {
+         const prompt = PLATFORM_PROMPTS[platform as keyof typeof PLATFORM_PROMPTS];
+diff --git a/supabase/functions/generate-post/index-openai.ts b/supabase/functions/generate-post/index-openai.ts
+index f27d6ce..51f83f2 100644
+--- a/supabase/functions/generate-post/index-openai.ts
++++ b/supabase/functions/generate-post/index-openai.ts
+@@ -7,19 +7,37 @@ const corsHeaders = {
+   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+ };
+ 
+-const simpleGenerateSchema = z.object({
+-  type: z.literal("simple"),
+-  topic: z.string().min(1).max(200),
+-  content: z.string().min(1).max(3000),
+-  tone: z.string().min(1).max(50),
+-  platforms: z.array(z.enum(['reddit', 'threads', 'instagram', 'twitter', 'pinterest'])).min(1).max(5),
+-});
++const simpleGenerateSchema = z
++  .object({
++    type: z.literal("simple"),
++    topic: z.string().max(200).optional(),
++    content: z.string().max(3000).optional(),
++    tone: z.string().min(1).max(50),
++    platforms: z
++      .array(z.enum(["twitter", "linkedin", "threads"]))
++      .min(1)
++      .max(3),
++  })
++  .superRefine((val, ctx) => {
++    const hasTopic = Boolean(val.topic && val.topic.trim());
++    const hasContent = Boolean(val.content && val.content.trim());
++    if (!hasTopic && !hasContent) {
++      ctx.addIssue({
++        code: "custom",
++        message: "Either topic or content must be provided",
++        path: ["topic"],
++      });
++    }
++  });
+ 
+ const blogGenerateSchema = z.object({
+   type: z.literal("blog"),
+   blogContent: z.string().min(1).max(10000),
+   keyMessage: z.string().max(500).optional(),
+-  platforms: z.array(z.enum(['reddit', 'threads', 'instagram', 'twitter', 'pinterest'])).min(1).max(5),
++  platforms: z
++    .array(z.enum(["twitter", "linkedin", "threads"]))
++    .min(1)
++    .max(3),
+ });
+ 
+ const generateRequestSchema = z.discriminatedUnion("type", [
+@@ -28,14 +46,6 @@ const generateRequestSchema = z.discriminatedUnion("type", [
+ ]);
+ 
+ const PLATFORM_PROMPTS = {
+-  reddit: `Create a Reddit post that:
+-- Starts with an engaging hook based on real experience
+-- Uses community-friendly tone (authentic, conversational)
+-- Includes a clear body with specific details
+-- Ends with a question to encourage discussion
+-- Keep it concise but informative (200-400 words)
+-- Avoid salesy language`,
+-
+   threads: `Create a Threads post that:
+ - Is extremely concise (50-100 characters ideal)
+ - Uses casual, conversational tone
+@@ -44,15 +54,6 @@ const PLATFORM_PROMPTS = {
+ - Ends with subtle engagement hook
+ - Think Twitter brevity meets Instagram personality`,
+ 
+-  instagram: `Create an Instagram caption that:
+-- Starts with an attention-grabbing first line
+-- Uses warm, inspirational or aesthetic tone
+-- Include 3-4 short paragraphs with line breaks
+-- Add relevant emojis naturally throughout
+-- End with 20-30 highly relevant hashtags
+-- Mix popular and niche hashtags
+-- Make it visually scannable`,
+-
+   twitter: `Create a Twitter/X post that:
+ - Delivers one clear insight or value point
+ - Uses punchy, direct language
+@@ -61,14 +62,12 @@ const PLATFORM_PROMPTS = {
+ - Optional: Add a subtle CTA or question
+ - Make every word count`,
+ 
+-  pinterest: `Create a Pinterest description that:
+-- Starts with a clear, keyword-rich title (60 chars)
+-- Includes detailed description (150-500 words)
+-- Uses SEO-friendly keywords naturally
+-- Focuses on value and actionability
+-- Adds 5-10 relevant keyword tags
+-- Inspires saving/sharing
+-- Be helpful and discoverable`,
++  linkedin: `Create a LinkedIn post that:
++- Shares one practical, professional insight
++- Uses concise, credible language
++- 1-3 short paragraphs
++- Add 1-3 relevant hashtags naturally
++- Invite conversation without being salesy`,
+ };
+ 
+ const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+@@ -197,7 +196,7 @@ serve(async (req) => {
+     // Branch based on request type
+     if (requestData.type === "simple") {
+       // Original simple generation logic
+-      const { topic, content, tone } = requestData;
++      const { topic = "", content = "", tone } = requestData;
+ 
+       for (const platform of platforms) {
+         const prompt = PLATFORM_PROMPTS[platform as keyof typeof PLATFORM_PROMPTS];
+diff --git a/supabase/functions/generate-post/index.ts b/supabase/functions/generate-post/index.ts
+index 220783f..ee2bae3 100644
+--- a/supabase/functions/generate-post/index.ts
++++ b/supabase/functions/generate-post/index.ts
+@@ -5,7 +5,7 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
+ 
+ import { jsonError, jsonOk } from "../_shared/errors.ts";
+ import { corsHeaders } from "../_shared/cors.ts";
+-import { BrandVoice, promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
++import { promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
+ import {
+   createSupabaseClient,
+   getAuthenticatedUser,
+@@ -21,46 +21,28 @@ import { usageGuard } from "../_shared/usageGuard.ts";
+  * Request Schema
+  * --------------------------------------------------- */
+ const requestSchema = z.discriminatedUnion("type", [
+-  z.object({
+-    type: z.literal("simple"),
+-    topic: z.string().min(1),
+-    content: z.string().min(1),
+-    tone: z.string().min(1),
+-    platforms: z.array(platformEnum).min(1),
+-    brandVoiceId: z.string().uuid().nullable().optional(),
+-  }),
++  z
++    .object({
++      type: z.literal("simple"),
++      topic: z.string().max(200).optional(),
++      content: z.string().max(3000).optional(),
++      tone: z.string().min(1),
++      platforms: z.array(platformEnum).min(1).max(3),
++    })
++    .superRefine((val, ctx) => {
++      const hasTopic = Boolean(val.topic && val.topic.trim());
++      const hasContent = Boolean(val.content && val.content.trim());
++      if (!hasTopic && !hasContent) {
++        ctx.addIssue({ code: "custom", message: "Either topic or content must be provided", path: ["topic"] });
++      }
++    }),
+   z.object({
+     type: z.literal("blog"),
+     blogContent: z.string().min(1),
+-    platforms: z.array(platformEnum).min(1),
+-    brandVoiceId: z.string().uuid().nullable().optional(),
++    platforms: z.array(platformEnum).min(1).max(3),
+   }),
+ ]);
+ 
+-/* -----------------------------------------------------
+- * Brand Voice Loader
+- * --------------------------------------------------- */
+-async function resolveBrandVoice(
+-  supabase: SupabaseClient,
+-  userId: string,
+-  brandVoiceId?: string | null,
+-): Promise<BrandVoice> {
+-  if (!brandVoiceId) return null;
+-
+-  const { data, error } = await supabase
+-    .from("brand_voices")
+-    .select("extracted_style,label")
+-    .eq("id", brandVoiceId)
+-    .eq("user_id", userId)
+-    .maybeSingle();
+-
+-  if (error) {
+-    throw new Error(`Failed to load brand voice: ${error.message}`);
+-  }
+-
+-  return data ?? null;
+-}
+-
+ /* -----------------------------------------------------
+  * AI Output Parsing (Platform JSON)
+  * --------------------------------------------------- */
+@@ -302,8 +284,7 @@ async function handler(req: Request) {
+         platformCount: payload.platforms.length,
+         blogLength: payload.type === "blog"
+           ? payload.blogContent.length
+-          : undefined,
+-        brandVoiceRequested: Boolean(payload.brandVoiceId),
++          : (payload.content ?? "").length,
+       },
+     );
+   } catch (err) {
+@@ -312,19 +293,6 @@ async function handler(req: Request) {
+     return jsonError("INTERNAL_ERROR", "Failed to enforce usage limits", 500);
+   }
+ 
+-  // -------- BRAND VOICE -------- //
+-  let brandVoice: BrandVoice = null;
+-  try {
+-    brandVoice = await resolveBrandVoice(
+-      supabase,
+-      user.id,
+-      payload.brandVoiceId ?? null,
+-    );
+-  } catch (err) {
+-    console.error(err);
+-    return jsonError("INTERNAL_ERROR", "Failed to load brand voice", 500);
+-  }
+-
+   // -------- AI GENERATION -------- //
+   const posts: Record<Platform, string> = {} as Record<Platform, string>;
+ 
+@@ -335,18 +303,16 @@ async function handler(req: Request) {
+ 
+     const singleRequest: RequestShape =
+       payload.type === "simple"
+-        ? { ...payload, platforms: [platform] }
++        ? { ...payload, content: payload.content ?? "", topic: payload.topic ?? "", platforms: [platform] }
+         : {
+           type: "blog",
+           blogContent: payload.blogContent,
+           platforms: [platform],
+-          brandVoiceId: payload.brandVoiceId ?? null,
+         };
+ 
+     const prompt = promptBuilder({
+       request: singleRequest,
+       platformRules: rulesForOne,
+-      brandVoice,
+     });
+ 
+     let aiContent: string;
