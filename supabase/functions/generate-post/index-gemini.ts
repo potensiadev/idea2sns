@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { aiRouter } from "../_shared/aiRouter.ts";
+import { createSupabaseClient } from "../_shared/supabaseClient.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -103,16 +103,16 @@ serve(async (req) => {
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error("Missing Supabase environment configuration");
+    let supabase;
+    try {
+      supabase = createSupabaseClient(req);
+    } catch (error) {
+      console.error("Supabase configuration error", error);
+      return new Response(JSON.stringify({ error: "Server configuration error" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
 
     const {
       data: { user },
@@ -186,7 +186,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
           });
         }
 
-        posts[platform] = result.content;
+        posts[platform] = result.content ?? "";
       }
     } else {
       // Blog analysis and conversion logic
@@ -233,7 +233,7 @@ Provide a structured summary in JSON format:
       let blogSummary;
       try {
         // Extract JSON from markdown code blocks if present
-        let jsonText = analysisResult.content.trim();
+        let jsonText = (analysisResult.content ?? "").trim();
         if (jsonText.includes("```json")) {
           jsonText = jsonText.split("```json")[1].split("```")[0].trim();
         } else if (jsonText.includes("```")) {
@@ -284,7 +284,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
           });
         }
 
-        posts[platform] = result.content;
+        posts[platform] = result.content ?? "";
       }
     }
 
