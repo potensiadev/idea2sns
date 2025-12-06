@@ -57,12 +57,7 @@ export default function Settings() {
 
     try {
       setIsSubmitting(true);
-      const { error } = await edgeFunctions.activatePromo({ code: promoCode.trim() });
-
-      if (error) {
-        toast.error(error);
-        return;
-      }
+      await edgeFunctions.activatePromo({ code: promoCode.trim() });
 
       toast.success('Pro activated successfully!');
       setPromoCode('');
@@ -91,15 +86,10 @@ export default function Settings() {
 
     try {
       setIsAdminActivating(true);
-      const { error } = await edgeFunctions.adminUpgradeUser({
+      await edgeFunctions.adminUpgradeUser({
         userId: targetUserId,
         plan: adminPlan,
       });
-
-      if (error) {
-        toast.error(error);
-        return;
-      }
 
       toast.success('User plan updated');
       await loadProfileAndLimits();
