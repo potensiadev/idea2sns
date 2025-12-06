@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
-import { corsHeaders, jsonError, jsonOk } from "../_shared/errors.ts";
+import { jsonError, jsonOk } from "../_shared/errors.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 import { MVP_LIMITS } from "../_shared/limitsConfig.ts";
 import { createServiceSupabaseClient } from "../_shared/supabaseClient.ts";
 
@@ -23,6 +24,7 @@ function constantTimeEquals(a: string | null, b: string | null) {
 }
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -32,14 +34,14 @@ serve(async (req) => {
     supabase = createServiceSupabaseClient();
   } catch (error) {
     console.error("Failed to create Supabase client", error);
-    return jsonError("INTERNAL_ERROR", "Server configuration error", 500);
+    return jsonError("INTERNAL_ERROR", "Server configuration error", 500, undefined, corsHeaders);
   }
 
   const adminSecret = Deno.env.get("ADMIN_UPGRADE_SECRET") ?? "";
   const headerSecret = req.headers.get("x-admin-secret");
 
   if (!constantTimeEquals(headerSecret, adminSecret)) {
-    return jsonError("AUTH_REQUIRED", "Admin authentication required", 401);
+    return jsonError("AUTH_REQUIRED", "Admin authentication required", 401, undefined, corsHeaders);
   }
 
   try {
@@ -48,7 +50,7 @@ serve(async (req) => {
       const body = await req.json();
       const parsed = requestSchema.safeParse(body);
       if (!parsed.success) {
-        return jsonError("VALIDATION_ERROR", "Invalid request body", 400, parsed.error.format());
+        return jsonError("VALIDATION_ERROR", "Invalid request body", 400, parsed.error.format(), corsHeaders);
       }
       payload = parsed.data;
     } catch (error) {
@@ -57,6 +59,7 @@ serve(async (req) => {
         "Malformed JSON body",
         400,
         error instanceof Error ? error.message : String(error),
+        corsHeaders,
       );
     }
 
@@ -69,10 +72,10 @@ serve(async (req) => {
 
     if (updateError) {
       console.error("Failed to update user plan", updateError);
-      return jsonError("INTERNAL_ERROR", "Failed to update user", 500);
+      return jsonError("INTERNAL_ERROR", "Failed to update user", 500, undefined, corsHeaders);
     }
 
-    return jsonOk({ userId: payload.userId, plan: payload.plan, updated: true });
+    return jsonOk({ userId: payload.userId, plan: payload.plan, updated: true }, corsHeaders);
   } catch (error) {
     console.error("Unhandled error", error);
     return jsonError(
@@ -80,6 +83,7 @@ serve(async (req) => {
       "An unexpected error occurred",
       500,
       error instanceof Error ? error.message : String(error),
+      corsHeaders,
     );
   }
 });

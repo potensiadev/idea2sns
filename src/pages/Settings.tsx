@@ -10,21 +10,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { edgeFunctions } from '@/api/edgeFunctions';
-import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
-interface ExtractedVoice {
-  tone: string;
-  sentenceStyle: string;
-  vocabulary: string[];
-  strictness: number;
-  formatTraits?: string[];
-}
-
-export default function Account() {
+export default function Settings() {
   const navigate = useNavigate();
   const {
     user,
@@ -34,8 +24,6 @@ export default function Account() {
     loading,
     loadProfileAndLimits,
     loadDailyUsage,
-    brandVoiceSelection,
-    setBrandVoice,
   } = useAppStore();
   const [promoCode, setPromoCode] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,11 +31,8 @@ export default function Account() {
   const [adminUserId, setAdminUserId] = useState('');
   const [adminPlan, setAdminPlan] = useState<'pro' | 'free'>('pro');
   const [adminOpen, setAdminOpen] = useState(false);
-  const [brandVoices, setBrandVoices] = useState<{ id: string; title?: string; voice: ExtractedVoice }[]>([]);
-  const [loadingVoices, setLoadingVoices] = useState(false);
 
   const isPro = plan === 'pro';
-  const defaultBrandVoiceId = brandVoiceSelection?.id || '';
   const adminEnabled = Boolean(import.meta.env.VITE_ADMIN_UPGRADE_SECRET);
 
   useEffect(() => {
@@ -61,50 +46,6 @@ export default function Account() {
     loadProfileAndLimits();
     loadDailyUsage();
   }, [user, loadDailyUsage, loadProfileAndLimits]);
-
-  useEffect(() => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    if (!limits?.brand_voice) {
-      setBrandVoices([]);
-      return;
-    }
-
-    const fetchVoices = async () => {
-      try {
-        setLoadingVoices(true);
-        const { data, error } = await supabase
-          .from('brand_voices')
-          .select('id, label, extracted_style')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error loading brand voices', error);
-          toast.error('브랜드 보이스를 불러오지 못했어요.');
-          setBrandVoices([]);
-          return;
-        }
-
-        const mapped = (data || []).map((voice: any) => ({
-          id: voice.id,
-          title: voice.label,
-          voice: voice.extracted_style as ExtractedVoice,
-        }));
-        setBrandVoices(mapped);
-      } catch (err) {
-        console.error('Brand voice fetch error', err);
-        toast.error('브랜드 보이스를 불러오지 못했어요.');
-      } finally {
-        setLoadingVoices(false);
-      }
-    };
-
-    fetchVoices();
-  }, [user, limits?.brand_voice, navigate]);
 
   const handleActivatePromo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -175,23 +116,12 @@ export default function Account() {
     daily_generations: limits?.daily_generations ?? 'Unlimited',
     max_platforms_per_request: limits?.max_platforms_per_request ?? 'Unlimited',
     max_blog_length: limits?.max_blog_length ?? 'Unlimited',
-    variations_per_request: limits?.variations_per_request ?? 'Unlimited',
-    brand_voice: limits?.brand_voice ? 'Enabled' : 'Disabled',
-    history_limit: limits?.history_limit ?? 'Unlimited',
     priority_routing: limits?.priority_routing ? 'Enabled' : 'Disabled',
   }), [limits]);
 
-  const handleSelectBrandVoice = (voiceId: string) => {
-    const selected = brandVoices.find((v) => v.id === voiceId);
-    if (selected) {
-      setBrandVoice({ id: selected.id, label: selected.title, voice: selected.voice });
-      toast.success('Default brand voice saved');
-    }
-  };
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    navigate('/login');
+    navigate('/auth');
   };
 
   if (loading) {
@@ -210,7 +140,7 @@ export default function Account() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="mb-4">
-          <h1 className="text-3xl font-bold mb-2">Account Settings</h1>
+          <h1 className="text-3xl font-bold mb-2">Settings</h1>
           <p className="text-muted-foreground">Manage your account and subscription</p>
         </div>
 
@@ -232,7 +162,7 @@ export default function Account() {
               </div>
               <div className="flex items-center gap-3">
                 {!isPro && (
-                  <Button size="sm" variant="outline" onClick={() => navigate('/account#promo')}>
+                  <Button size="sm" variant="outline" onClick={() => navigate('/settings#promo')}>
                     Apply Promo
                   </Button>
                 )}
@@ -253,12 +183,6 @@ export default function Account() {
                 </p>
               </div>
               <div className="p-4 border rounded-lg bg-muted/30">
-                <p className="text-sm text-muted-foreground">Brand Voice</p>
-                <p className="font-medium text-lg flex items-center gap-2">
-                  {limits?.brand_voice ? <Check className="h-4 w-4 text-green-500" /> : 'Disabled'}
-                </p>
-              </div>
-              <div className="p-4 border rounded-lg bg-muted/30">
                 <p className="text-sm text-muted-foreground">Blog to SNS</p>
                 <p className="font-medium text-lg flex items-center gap-2">
                   {limits?.blog_to_sns ? <Check className="h-4 w-4 text-green-500" /> : 'Disabled'}
@@ -268,6 +192,12 @@ export default function Account() {
                 <p className="text-sm text-muted-foreground">Max Blog Length</p>
                 <p className="font-medium text-lg">
                   {limits?.max_blog_length ?? 'Unlimited'} chars
+                </p>
+              </div>
+              <div className="p-4 border rounded-lg bg-muted/30">
+                <p className="text-sm text-muted-foreground">Priority Routing</p>
+                <p className="font-medium text-lg flex items-center gap-2">
+                  {limits?.priority_routing ? <Check className="h-4 w-4 text-green-500" /> : 'Standard'}
                 </p>
               </div>
             </div>
@@ -284,9 +214,7 @@ export default function Account() {
               { label: 'Daily Generations', value: `${dailyUsed} / ${limitsDisplay.daily_generations}` },
               { label: 'Platforms per Request', value: limitsDisplay.max_platforms_per_request },
               { label: 'Max Blog Length', value: limits?.max_blog_length != null ? `${limits.max_blog_length} chars` : 'Unlimited' },
-              { label: 'Variations per Request', value: limitsDisplay.variations_per_request },
-              { label: 'History Limit', value: limitsDisplay.history_limit },
-              { label: 'Brand Voice', value: limitsDisplay.brand_voice },
+              { label: 'Blog to SNS', value: limits?.blog_to_sns ? 'Enabled' : 'Disabled' },
               { label: 'Priority Routing', value: limitsDisplay.priority_routing },
             ].map((item) => (
               <div key={item.label} className="p-4 border rounded-lg bg-muted/30">
@@ -323,77 +251,6 @@ export default function Account() {
                 Applied instantly. You may need to refresh to see updated limits.
               </p>
             </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Brand Voice Defaults</CardTitle>
-            <CardDescription>Set your preferred voice for future generations</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!limits?.brand_voice && (
-              <div className="p-6 border rounded-lg bg-muted/30 text-center space-y-3">
-                <p className="font-medium">Brand Voice is a Pro feature.</p>
-                <p className="text-sm text-muted-foreground">
-                  Upgrade to Pro to extract and save your brand voice.
-                </p>
-                <Button onClick={() => navigate('/account#promo')}>Upgrade to Pro / Enter Promo Code</Button>
-              </div>
-            )}
-
-            {limits?.brand_voice && (
-              <>
-                {loadingVoices ? (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <LoadingSpinner className="h-4 w-4" /> Loading voices...
-                  </div>
-                ) : brandVoices.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">
-                    No saved brand voices yet. Create one in the Brand Voice tab.
-                  </div>
-                ) : (
-                  <RadioGroup
-                    value={defaultBrandVoiceId}
-                    onValueChange={handleSelectBrandVoice}
-                    className="space-y-3"
-                  >
-                    {brandVoices.map((voice) => (
-                      <label
-                        key={voice.id}
-                        className={cn(
-                          'flex items-start gap-3 p-4 rounded-lg border cursor-pointer hover:border-primary transition',
-                          defaultBrandVoiceId === voice.id && 'border-primary bg-primary/5'
-                        )}
-                      >
-                        <RadioGroupItem value={voice.id} className="mt-1" />
-                        <div className="space-y-1">
-                          <p className="font-medium">{voice.title || 'Untitled voice'}</p>
-                          <p className="text-sm text-muted-foreground">Tone: {voice.voice.tone}</p>
-                          <p className="text-sm text-muted-foreground">Sentence Style: {voice.voice.sentenceStyle}</p>
-                          <div className="flex flex-wrap gap-2 pt-1">
-                            {voice.voice?.vocabulary?.map((vocab) => (
-                              <span
-                                key={vocab}
-                                className="px-2 py-1 rounded-full bg-primary/10 text-primary text-xs"
-                              >
-                                {vocab}
-                              </span>
-                            ))}
-                          </div>
-                          <p className="text-xs text-muted-foreground">Strictness: {voice.voice?.strictness}</p>
-                          {voice.voice?.formatTraits && voice.voice.formatTraits.length > 0 && (
-                            <p className="text-xs text-muted-foreground">
-                              Format: {voice.voice.formatTraits.join(', ')}
-                            </p>
-                          )}
-                        </div>
-                      </label>
-                    ))}
-                  </RadioGroup>
-                )}
-              </>
-            )}
           </CardContent>
         </Card>
 
@@ -458,14 +315,14 @@ export default function Account() {
                 Upgrade to Pro
               </CardTitle>
               <CardDescription>
-                Upgrade to Pro to unlock unlimited history, brand voice, longer repurposing, and more.
+                Upgrade to Pro to unlock unlimited generations, higher limits, and priority routing.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button className="w-full" size="lg" onClick={() => document.getElementById('promo')?.scrollIntoView({ behavior: 'smooth' })}>
                 Enter Promo Code
               </Button>
-              <Button variant="outline" className="w-full" size="lg" onClick={() => navigate('/account#promo')}>
+              <Button variant="outline" className="w-full" size="lg" onClick={() => navigate('/settings#promo')}>
                 Go to Promo Section
               </Button>
             </CardContent>

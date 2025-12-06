@@ -7,18 +7,17 @@ const allowedOrigins = [
   "http://localhost:5173",
 ];
 
-// Using wildcard for now; can switch to origin-based logic later
 const fallbackOrigin = allowedOrigins[0];
 
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-};
-
-// Helper function for future origin-based CORS
 export function buildCorsHeaders(requestOrigin?: string | null): Record<string, string> {
   const allowOrigin = requestOrigin && allowedOrigins.includes(requestOrigin) ? requestOrigin : fallbackOrigin;
 
-  return { ...corsHeaders, "Access-Control-Allow-Origin": allowOrigin };
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, content-type",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  };
 }
+
+export const corsHeaders = buildCorsHeaders();
+export { allowedOrigins };

@@ -2,7 +2,7 @@
 import { serve } from "https://deno.land/std/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { jsonError } from "../_shared/errors.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 import { MVP_LIMITS } from "../_shared/limitsConfig.ts";
 import { createServiceSupabaseClient } from "../_shared/supabaseClient.ts";
 
@@ -206,6 +206,7 @@ async function handler(req: Request) {
 }
 
 serve(async (req: Request) => {
+  const corsHeaders = buildCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }

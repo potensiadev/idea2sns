@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
-import { corsHeaders, jsonError, jsonOk } from "../_shared/errors.ts";
+import { jsonError, jsonOk } from "../_shared/errors.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 import { MVP_LIMITS } from "../_shared/limitsConfig.ts";
 import { createServiceSupabaseClient, createSupabaseClient, getAuthenticatedUser } from "../_shared/supabaseClient.ts";
 
@@ -28,6 +29,7 @@ CREATE TABLE IF NOT EXISTS promo_code_redemptions (
 */
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -39,13 +41,13 @@ serve(async (req) => {
     serviceSupabase = createServiceSupabaseClient();
   } catch (error) {
     console.error("Failed to create Supabase clients", error);
-    return jsonError("INTERNAL_ERROR", "Server configuration error", 500);
+    return jsonError("INTERNAL_ERROR", "Server configuration error", 500, undefined, corsHeaders);
   }
 
   try {
     const user = await getAuthenticatedUser(authSupabase);
     if (!user) {
-      return jsonError("AUTH_REQUIRED", "Authentication required", 401);
+      return jsonError("AUTH_REQUIRED", "Authentication required", 401, undefined, corsHeaders);
     }
 
     let payload: z.infer<typeof requestSchema>;
@@ -53,7 +55,7 @@ serve(async (req) => {
       const body = await req.json();
       const parsed = requestSchema.safeParse(body);
       if (!parsed.success) {
-        return jsonError("VALIDATION_ERROR", "Invalid request body", 400, parsed.error.format());
+        return jsonError("VALIDATION_ERROR", "Invalid request body", 400, parsed.error.format(), corsHeaders);
       }
       payload = parsed.data;
     } catch (error) {
@@ -62,6 +64,7 @@ serve(async (req) => {
         "Malformed JSON body",
         400,
         error instanceof Error ? error.message : String(error),
+        corsHeaders,
       );
     }
 
@@ -73,19 +76,19 @@ serve(async (req) => {
 
     if (promoError) {
       console.error("Failed to fetch promo code", promoError);
-      return jsonError("INTERNAL_ERROR", "Failed to validate promo code", 500);
+      return jsonError("INTERNAL_ERROR", "Failed to validate promo code", 500, undefined, corsHeaders);
     }
 
     if (!promo) {
-      return jsonError("VALIDATION_ERROR", "Invalid promo code", 400);
+      return jsonError("VALIDATION_ERROR", "Invalid promo code", 400, undefined, corsHeaders);
     }
 
     if (promo.expires_at && new Date(promo.expires_at).getTime() < Date.now()) {
-      return jsonError("VALIDATION_ERROR", "Promo code expired", 400);
+      return jsonError("VALIDATION_ERROR", "Promo code expired", 400, undefined, corsHeaders);
     }
 
     if (promo.max_uses !== null && promo.used_count >= promo.max_uses) {
-      return jsonError("VALIDATION_ERROR", "Promo code already fully used", 400);
+      return jsonError("VALIDATION_ERROR", "Promo code already fully used", 400, undefined, corsHeaders);
     }
 
     const { error: updateProfileError } = await serviceSupabase
@@ -95,7 +98,7 @@ serve(async (req) => {
 
     if (updateProfileError) {
       console.error("Failed to update profile", updateProfileError);
-      return jsonError("INTERNAL_ERROR", "Failed to apply promo", 500);
+      return jsonError("INTERNAL_ERROR", "Failed to apply promo", 500, undefined, corsHeaders);
     }
 
     const { error: incrementError } = await serviceSupabase
@@ -105,7 +108,7 @@ serve(async (req) => {
 
     if (incrementError) {
       console.error("Failed to increment promo usage", incrementError);
-      return jsonError("INTERNAL_ERROR", "Failed to record promo usage", 500);
+      return jsonError("INTERNAL_ERROR", "Failed to record promo usage", 500, undefined, corsHeaders);
     }
 
     const { error: redemptionError } = await serviceSupabase
@@ -114,10 +117,10 @@ serve(async (req) => {
 
     if (redemptionError) {
       console.error("Failed to log promo redemption", redemptionError);
-      return jsonError("INTERNAL_ERROR", "Failed to record promo redemption", 500);
+      return jsonError("INTERNAL_ERROR", "Failed to record promo redemption", 500, undefined, corsHeaders);
     }
 
-    return jsonOk({ plan: "pro", activated: true, promo: payload.code });
+    return jsonOk({ plan: "pro", activated: true, promo: payload.code }, corsHeaders);
   } catch (error) {
     console.error("Unhandled error", error);
     return jsonError(
@@ -125,6 +128,7 @@ serve(async (req) => {
       "An unexpected error occurred",
       500,
       error instanceof Error ? error.message : String(error),
+      corsHeaders,
     );
   }
 });
