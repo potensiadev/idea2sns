@@ -8,24 +8,36 @@ export interface EdgeFunctionResponse<T = any> {
 export async function callEdgeFunction<T = any>(
   functionName: string,
   body?: Record<string, any>,
-  options?: { headers?: Record<string, string> }
+  options?: { headers?: Record<string, string>; requireAuth?: boolean }
 ): Promise<EdgeFunctionResponse<T>> {
-  try {
-    const { data, error } = await supabase.functions.invoke(functionName, {
-      body: body || {},
-      headers: options?.headers,
-    });
+  let headers = options?.headers;
 
-    if (error) {
-      console.error(`Edge function ${functionName} error:`, error);
-      return { error: error.message || 'Unknown error occurred' };
+  if (options?.requireAuth) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      throw new Error('Authentication required to call edge function');
     }
 
-    return { data };
-  } catch (err) {
-    console.error(`Edge function ${functionName} exception:`, err);
-    return { error: err instanceof Error ? err.message : 'Unknown error occurred' };
+    headers = {
+      ...headers,
+      Authorization: `Bearer ${session.access_token}`,
+    };
   }
+
+  const { data, error } = await supabase.functions.invoke(functionName, {
+    body: body || {},
+    headers,
+  });
+
+  if (error) {
+    console.error(`Edge function ${functionName} error:`, error);
+    throw error;
+  }
+
+  return { data };
 }
 
 // Typed edge function calls
@@ -37,7 +49,10 @@ export const edgeFunctions = {
     tone: string;
     platforms: string[];
     brandVoiceId?: string | null;
-  }) => callEdgeFunction('generate-post', body),
+  }) =>
+    callEdgeFunction('generate-post', body, {
+      requireAuth: true,
+    }),
   
   generateVariations: (body: {
     baseText: string;
@@ -50,7 +65,10 @@ export const edgeFunctions = {
     blogContent: string;
     platforms: string[];
     brandVoiceId?: string | null;
-  }) => callEdgeFunction('generate-post', body),
+  }) =>
+    callEdgeFunction('generate-post', body, {
+      requireAuth: true,
+    }),
   
   extractBrandVoice: (body: {
     samples: string[];
