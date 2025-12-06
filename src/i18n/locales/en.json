@@ -1,9 +1,9 @@
 {
   "hero": {
     "badge": "AI-Powered Multi-Platform Content",
-    "title1": "Create Posts for 5 Platforms",
+    "title1": "Create Posts for 3 Platforms",
     "title2": "in One Click",
-    "description": "Enter your content once and let AI generate optimized posts for Reddit, Threads, Instagram, Twitter, and Pinterest — each tailored to the platform's unique style.",
+    "description": "Enter your content once and let AI generate optimized posts for Twitter (X), LinkedIn, and Threads — each tailored to the platform's unique style.",
     "login": "Login",
     "signup": "Sign Up"
   },
@@ -15,7 +15,7 @@
     "hero": {
       "title": {
         "part1": "Create Contents",
-        "part2": "for 6 SNS Channels",
+        "part2": "for 3 SNS Channels",
         "part3": "with One Click"
       },
       "subtitle": "Enter your blog post or idea, and AI will automatically generate platform-optimized content for each social media",
@@ -31,8 +31,8 @@
       "title": "Why Choose idea2sns?",
       "subtitle": "The perfect solution for content marketers and creators",
       "multiPlatform": {
-        "title": "5 Platforms at Once",
-        "description": "Generate optimized content for Reddit, Threads, Instagram, Twitter, and Pinterest - all tailored to each platform's unique characteristics"
+        "title": "3 Platforms at Once",
+        "description": "Generate optimized content for Twitter (X), LinkedIn, and Threads - all tailored to each platform's unique characteristics"
       },
       "optimized": {
         "title": "Platform-Optimized",
@@ -145,9 +145,7 @@
   },
   "platforms": {
     "twitter": "Twitter (X)",
-    "instagram": "Instagram",
-    "reddit": "Reddit",
-    "threads": "Threads",
-    "pinterest": "Pinterest"
+    "linkedin": "LinkedIn",
+    "threads": "Threads"
   }
 }

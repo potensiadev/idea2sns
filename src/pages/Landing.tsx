@@ -38,7 +38,7 @@ const Landing = () => {
   ];
 
   const stats = [
-    { number: "5", label: t("landing.stats.platforms") },
+    { number: "3", label: t("landing.stats.platforms") },
     { number: "90%", label: t("landing.stats.timeSaved") },
     { number: "10K+", label: t("landing.stats.users") },
   ];
@@ -60,7 +60,7 @@ const Landing = () => {
             <Button variant="ghost" onClick={() => navigate("/auth")} className="font-semibold">
               {t("landing.nav.login")}
             </Button>
-            <Button onClick={() => navigate("/auth")} className="font-semibold">
+            <Button onClick={() => navigate("/generate")} className="font-semibold">
               {t("landing.nav.getStarted")}
             </Button>
           </div>
@@ -86,7 +86,7 @@ const Landing = () => {
             <Button
               size="lg"
               className="h-16 px-8 text-lg font-bold rounded-xl shadow-lg hover:shadow-xl"
-              onClick={() => navigate("/auth")}
+              onClick={() => navigate("/generate")}
             >
               {t("landing.hero.cta")}
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -95,7 +95,7 @@ const Landing = () => {
               size="lg"
               variant="outline"
               className="h-16 px-8 text-lg font-semibold rounded-xl"
-              onClick={() => navigate("/create")}
+              onClick={() => navigate("/generate")}
             >
               {t("landing.hero.tryDemo")}
             </Button>
@@ -162,7 +162,7 @@ const Landing = () => {
               <Button
                 size="lg"
                 className="mt-10 h-14 px-8 text-lg font-bold rounded-xl"
-                onClick={() => navigate("/auth")}
+                onClick={() => navigate("/generate")}
               >
                 {t("landing.benefits.cta")}
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -218,7 +218,7 @@ const Landing = () => {
             size="lg"
             variant="secondary"
             className="h-16 px-10 text-lg font-bold rounded-xl shadow-xl hover:shadow-2xl"
-            onClick={() => navigate("/auth")}
+            onClick={() => navigate("/generate")}
           >
             {t("landing.cta.button")}
             <Sparkles className="ml-2 h-5 w-5" />

@@ -1,25 +1,39 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { createSupabaseClient } from "../_shared/supabaseClient.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const simpleGenerateSchema = z.object({
-  type: z.literal("simple"),
-  topic: z.string().min(1).max(200),
-  content: z.string().min(1).max(3000),
-  tone: z.string().min(1).max(50),
-  platforms: z.array(z.enum(['reddit', 'threads', 'instagram', 'twitter', 'pinterest'])).min(1).max(5),
-});
+const simpleGenerateSchema = z
+  .object({
+    type: z.literal("simple"),
+    topic: z.string().max(200).optional(),
+    content: z.string().max(3000).optional(),
+    tone: z.string().min(1).max(50),
+    platforms: z
+      .array(z.enum(["twitter", "linkedin", "threads"]))
+      .min(1)
+      .max(3),
+  })
+  .superRefine((val, ctx) => {
+    const hasTopic = Boolean(val.topic && val.topic.trim());
+    const hasContent = Boolean(val.content && val.content.trim());
+    if (!hasTopic && !hasContent) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Either topic or content must be provided",
+        path: ["topic"],
+      });
+    }
+  });
 
 const blogGenerateSchema = z.object({
   type: z.literal("blog"),
   blogContent: z.string().min(1).max(10000),
   keyMessage: z.string().max(500).optional(),
-  platforms: z.array(z.enum(['reddit', 'threads', 'instagram', 'twitter', 'pinterest'])).min(1).max(5),
+  platforms: z
+    .array(z.enum(["twitter", "linkedin", "threads"]))
+    .min(1)
+    .max(3),
 });
 
 const generateRequestSchema = z.discriminatedUnion("type", [
@@ -28,14 +42,6 @@ const generateRequestSchema = z.discriminatedUnion("type", [
 ]);
 
 const PLATFORM_PROMPTS = {
-  reddit: `Create a Reddit post that:
-- Starts with an engaging hook based on real experience
-- Uses community-friendly tone (authentic, conversational)
-- Includes a clear body with specific details
-- Ends with a question to encourage discussion
-- Keep it concise but informative (200-400 words)
-- Avoid salesy language`,
-
   threads: `Create a Threads post that:
 - Is extremely concise (50-100 characters ideal)
 - Uses casual, conversational tone
@@ -43,15 +49,6 @@ const PLATFORM_PROMPTS = {
 - Can include 1-2 relevant emojis
 - Ends with subtle engagement hook
 - Think Twitter brevity meets Instagram personality`,
-
-  instagram: `Create an Instagram caption that:
-- Starts with an attention-grabbing first line
-- Uses warm, inspirational or aesthetic tone
-- Include 3-4 short paragraphs with line breaks
-- Add relevant emojis naturally throughout
-- End with 20-30 highly relevant hashtags
-- Mix popular and niche hashtags
-- Make it visually scannable`,
 
   twitter: `Create a Twitter/X post that:
 - Delivers one clear insight or value point
@@ -61,23 +58,26 @@ const PLATFORM_PROMPTS = {
 - Optional: Add a subtle CTA or question
 - Make every word count`,
 
-  pinterest: `Create a Pinterest description that:
-- Starts with a clear, keyword-rich title (60 chars)
-- Includes detailed description (150-500 words)
-- Uses SEO-friendly keywords naturally
-- Focuses on value and actionability
-- Adds 5-10 relevant keyword tags
-- Inspires saving/sharing
-- Be helpful and discoverable`,
+  linkedin: `Create a LinkedIn post that:
+- Shares one practical, professional insight
+- Uses concise, credible language
+- 1-3 short paragraphs
+- Add 1-3 relevant hashtags naturally
+- Invite conversation without being salesy`,
 };
 
-const jsonResponse = (body: Record<string, unknown>, status = 200) =>
+const jsonResponse = (
+  corsHeaders: HeadersInit,
+  body: Record<string, unknown>,
+  status = 200
+) =>
   new Response(JSON.stringify(body), {
     status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
 serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -86,7 +86,7 @@ serve(async (req) => {
     // Verify authentication
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return jsonResponse({ error: "Missing authorization header" }, 401);
+      return jsonResponse(corsHeaders, { error: "Missing authorization header" }, 401);
     }
 
     let supabase;
@@ -94,7 +94,7 @@ serve(async (req) => {
       supabase = createSupabaseClient(req);
     } catch (error) {
       console.error("Supabase configuration error", error);
-      return jsonResponse({ error: "Server configuration error" }, 500);
+      return jsonResponse(corsHeaders, { error: "Server configuration error" }, 500);
     }
 
     const {
@@ -104,6 +104,7 @@ serve(async (req) => {
 
     if (userError || !user) {
       return jsonResponse(
+        corsHeaders,
         { error: "Invalid or expired authentication token" },
         403
       );
@@ -116,6 +117,7 @@ serve(async (req) => {
     if (!validationResult.success) {
       console.error("Validation error:", validationResult.error);
       return jsonResponse(
+        corsHeaders,
         {
           error: "Invalid request data",
           details: validationResult.error.flatten(),
@@ -197,7 +199,7 @@ serve(async (req) => {
     // Branch based on request type
     if (requestData.type === "simple") {
       // Original simple generation logic
-      const { topic, content, tone } = requestData;
+      const { topic = "", content = "", tone } = requestData;
 
       for (const platform of platforms) {
         const prompt = PLATFORM_PROMPTS[platform as keyof typeof PLATFORM_PROMPTS];
@@ -218,6 +220,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
 
         if (result.error) {
           return jsonResponse(
+            corsHeaders,
             { error: result.error },
             result.status
           );
@@ -260,6 +263,7 @@ Provide a structured summary in JSON format:
 
       if (analysisResult.error) {
         return jsonResponse(
+          corsHeaders,
           { error: analysisResult.error },
           analysisResult.status
         );
@@ -316,6 +320,7 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
 
         if (result.error) {
           return jsonResponse(
+            corsHeaders,
             { error: result.error },
             result.status
           );
@@ -327,10 +332,11 @@ Generate ONLY the post content. Do not include any meta-commentary, explanations
 
     console.log("Successfully generated posts for all platforms");
 
-    return jsonResponse({ posts });
+    return jsonResponse(corsHeaders, { posts });
   } catch (error) {
     console.error("Error in generate-post function:", error);
     return jsonResponse(
+      corsHeaders,
       { error: error instanceof Error ? error.message : "Unknown error" },
       500
     );

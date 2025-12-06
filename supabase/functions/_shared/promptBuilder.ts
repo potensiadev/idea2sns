@@ -19,37 +19,40 @@ export type RequestShape =
       content: string;
       tone: string;
       platforms: Platform[];
-      brandVoiceId?: string | null;
     }
   | {
       type: "blog";
       blogContent: string;
       platforms: Platform[];
-      brandVoiceId?: string | null;
     };
 
 export type PromptBuilderInput = {
   request: RequestShape;
   platformRules: Record<Platform, string>;
-  brandVoice: BrandVoice;
+  brandVoice?: BrandVoice;
 };
 
 export function promptBuilder({ request, platformRules, brandVoice }: PromptBuilderInput): string {
+  const toneCue = request.type === "simple" && request.tone ? `Tone: ${request.tone}\n` : "";
   const brandVoiceCue = brandVoice?.extracted_style
-    ? `\nBrand voice hints (apply across all outputs): ${JSON.stringify(brandVoice.extracted_style)}`
+    ? `\n(Brand voice context was provided but is currently unused)`
     : "";
 
   if (request.type === "simple") {
-    return `You are an expert social media strategist. Generate JSON with one entry per requested platform key, each containing\na platform-optimized post.\n` +
+    return (
+      `You are an expert social media strategist. Generate JSON with one entry per requested platform key, each containing\n` +
       `Rules per platform (strictly follow): ${JSON.stringify(platformRules)}${brandVoiceCue}\n` +
-      `Input:\n- Topic: ${request.topic}\n- Supporting content: ${request.content}\n- Tone: ${request.tone}\n- Platforms: ${request.platforms.join(", ")}.\n` +
-      `Return JSON: { "platform": "post text" } with exactly the requested platform keys and nothing else.`;
+      `Input:\n- Topic: ${request.topic}\n- Supporting content: ${request.content}\n- ${toneCue}- Platforms: ${request.platforms.join(", ")}.\n` +
+      `Return JSON: { "platform": "post text" } with exactly the requested platform keys and nothing else.`
+    );
   }
 
-  return `You are an expert social media strategist. Convert the following blog content into platform-optimized posts.\n` +
+  return (
+    `You are an expert social media strategist. Convert the following blog content into platform-optimized posts.\n` +
     `Rules per platform: ${JSON.stringify(platformRules)}${brandVoiceCue}\n` +
     `Blog content:\n${request.blogContent}\n` +
-    `Return JSON: { "platform": "post text" } with exactly the requested platform keys.`;
+    `Return JSON: { "platform": "post text" } with exactly the requested platform keys.`
+  );
 }
 
 export type VariationPromptInput = { baseText: string; style: VariationStyle; brandVoice: BrandVoice };
@@ -79,8 +82,7 @@ export function variationPromptBuilder({ baseText, style, brandVoice }: Variatio
 
 export function brandVoiceAnalysisPromptBuilder({ samples }: BrandVoiceAnalysisPromptInput): string {
   const joined = samples
-    .map((sample, index) => `Sample ${index + 1}:
-${sample}`)
+    .map((sample, index) => `Sample ${index + 1}: ${sample}`)
     .join("\n\n");
 
   return (
@@ -88,13 +90,7 @@ ${sample}`)
     `\nFocus on reusable patterns, not specific content. Avoid hallucinations.` +
     `\nSamples:\n${joined}\n` +
     `Return strict JSON with this shape:\n` +
-    `{
-  "tone": string, // tone adjectives and mood
-  "sentenceStyle": string, // sentence length, structure, cadence
-  "vocabulary": string, // notable vocabulary patterns, jargon, or phrasing
-  "format": string, // formatting preferences (bullets, line breaks, emojis)
-  "strictness": number // 0-1 representing how strictly to enforce this voice
-}` +
+    `{\n  "tone": string, // tone adjectives and mood\n  "sentenceStyle": string, // sentence length, structure, cadence\n  "vocabulary": string, // notable vocabulary patterns, jargon, or phrasing\n  "format": string, // formatting preferences (bullets, line breaks, emojis)\n  "strictness": number // 0-1 representing how strictly to enforce this voice\n}` +
     `\nDo not include any other commentary. Respond with JSON only.`
   );
 }
