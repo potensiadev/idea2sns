@@ -3,8 +3,8 @@ const allowedOrigins = [
   "https://idea2sns.space",
   "https://www.idea2sns.space",
   "https://idea2sns.netlify.app",
-  "http://localhost:8080",
   "http://localhost:5173",
+  "http://localhost:8080",
 ];
 
 const fallbackOrigin = allowedOrigins[0];
