@@ -4,7 +4,7 @@ import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 import { jsonError, jsonOk } from "../_shared/errors.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 import { promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
 import {
   createSupabaseClient,
@@ -376,6 +376,7 @@ async function handler(req: Request) {
  * Server
  * --------------------------------------------------- */
 serve(async (req: Request) => {
+  const corsHeaders = buildCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
