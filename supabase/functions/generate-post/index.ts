@@ -1,10 +1,8 @@
 // deno-lint-ignore-file no-explicit-any
-import { serve } from "https://deno.land/std/http/server.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 
 import { jsonError, jsonOk } from "../_shared/errors.ts";
-import { buildCorsHeaders } from "../_shared/cors.ts";
 import { promptBuilder, RequestShape } from "../_shared/promptBuilder.ts";
 import {
   createSupabaseClient,
@@ -16,6 +14,15 @@ import {
   type Platform,
 } from "../_shared/platformRules.ts";
 import { usageGuard } from "../_shared/usageGuard.ts";
+
+export const config = { runtime: "edge" };
+export const runtime = "edge";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "https://idea2sns.space",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
 
 /* -----------------------------------------------------
  * Request Schema
@@ -245,20 +252,20 @@ async function generateWithFallback(promptText: string): Promise<string> {
 /* -----------------------------------------------------
  * Handler
  * --------------------------------------------------- */
-async function handler(req: Request) {
+async function handleRequest(req: Request) {
   let supabase: SupabaseClient;
 
   try {
     supabase = createSupabaseClient(req);
   } catch (error) {
     console.error(error);
-    return jsonError("INTERNAL_ERROR", "Server configuration error", 500);
+    return jsonError("INTERNAL_ERROR", "Server configuration error", 500, undefined, corsHeaders);
   }
 
   // -------- AUTH -------- //
   const user = await getAuthenticatedUser(supabase);
   if (!user) {
-    return jsonError("AUTH_REQUIRED", "Authentication required", 401);
+    return jsonError("AUTH_REQUIRED", "Authentication required", 401, undefined, corsHeaders);
   }
 
   // -------- BODY VALIDATION -------- //
@@ -267,11 +274,17 @@ async function handler(req: Request) {
     const body = await req.json();
     const result = requestSchema.safeParse(body);
     if (!result.success) {
-      return jsonError("VALIDATION_ERROR", "Invalid request body", 400, result.error.format());
+      return jsonError(
+        "VALIDATION_ERROR",
+        "Invalid request body",
+        400,
+        result.error.format(),
+        corsHeaders,
+      );
     }
     payload = result.data as RequestShape;
   } catch (err) {
-    return jsonError("VALIDATION_ERROR", "Malformed JSON body", 400);
+    return jsonError("VALIDATION_ERROR", "Malformed JSON body", 400, undefined, corsHeaders);
   }
 
   // -------- USAGE GUARD -------- //
@@ -290,7 +303,7 @@ async function handler(req: Request) {
   } catch (err) {
     if (err instanceof Response) return err;
     console.error("Usage guard error:", err);
-    return jsonError("INTERNAL_ERROR", "Failed to enforce usage limits", 500);
+    return jsonError("INTERNAL_ERROR", "Failed to enforce usage limits", 500, undefined, corsHeaders);
   }
 
   // -------- AI GENERATION -------- //
@@ -325,6 +338,7 @@ async function handler(req: Request) {
         "All AI providers failed",
         502,
         err instanceof Error ? err.message : String(err),
+        corsHeaders,
       );
     }
 
@@ -338,6 +352,7 @@ async function handler(req: Request) {
         "AI response could not be parsed",
         502,
         err instanceof Error ? err.message : String(err),
+        corsHeaders,
       );
     }
   }
@@ -363,35 +378,43 @@ async function handler(req: Request) {
 
   if (generationError || !generationInsert) {
     console.error("Failed to save generation:", generationError);
-    return jsonError("INTERNAL_ERROR", "Failed to save generation", 500);
+    return jsonError("INTERNAL_ERROR", "Failed to save generation", 500, undefined, corsHeaders);
   }
 
-  return jsonOk({
-    generation_id: generationInsert.id,
-    posts,
+  return jsonOk(
+    {
+      generation_id: generationInsert.id,
+      posts,
+    },
+    corsHeaders,
+  );
+}
+
+async function respondWithCors(response: Response) {
+  const headers = new Headers(response.headers);
+
+  Object.entries(corsHeaders).forEach(([key, value]) => {
+    headers.set(key, value);
+  });
+
+  const body = await response.text();
+
+  return new Response(body, {
+    status: response.status || 200,
+    headers,
   });
 }
 
-/* -----------------------------------------------------
- * Server
- * --------------------------------------------------- */
-serve(async (req: Request) => {
-  const origin = req.headers.get("origin");
-  const corsHeaders = buildCorsHeaders(origin);
-
+export default async function handler(req: Request) {
   if (req.method === "OPTIONS") {
     return new Response("ok", { status: 200, headers: corsHeaders });
   }
 
   try {
-    const resp = await handler(req);
+    const resp = await handleRequest(req);
 
     if (resp instanceof Response) {
-      const text = await resp.text();
-      return new Response(text, {
-        status: resp.status || 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return respondWithCors(resp);
     }
 
     return new Response(JSON.stringify(resp), {
@@ -400,9 +423,13 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error("[Edge Error]", err);
-    return new Response(
-      JSON.stringify({ error: String((err as any)?.message ?? err) }),
-      { status: 500, headers: corsHeaders },
-    );
+    if (err instanceof Response) {
+      return respondWithCors(err);
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: message }), {
+      status: 500,
+      headers: corsHeaders,
+    });
   }
-});
+}
