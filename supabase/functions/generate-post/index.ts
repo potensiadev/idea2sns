@@ -103,10 +103,15 @@ serve(async (req: Request) => {
     );
   }
 
+  const authHeader = req.headers.get("Authorization");
+  console.log("Auth header present:", !!authHeader);
+
   const user = await getAuthenticatedUser(supabase);
   if (!user) {
+    console.error("Auth failed - no user found. Auth header:", authHeader?.substring(0, 20) + "...");
     return withCors(jsonError("AUTH_REQUIRED", "Authentication required", 401, undefined, corsHeaders));
   }
+  console.log("Authenticated user:", user.id);
 
   const requestSchema = z.discriminatedUnion("type", [
     z
