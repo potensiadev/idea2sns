@@ -41,8 +41,18 @@ export function createServiceSupabaseClient(): SupabaseClient {
 }
 
 export async function getAuthenticatedUser(supabase: SupabaseClient) {
+  // First try getUser() which validates the token with the auth server
   const { data, error } = await supabase.auth.getUser();
-  if (error || !data?.user) {
+
+  console.log("getUser result - error:", error?.message ?? "none", "user:", data?.user?.id ?? "null");
+
+  if (error) {
+    console.error("getUser error details:", JSON.stringify(error));
+    return null;
+  }
+
+  if (!data?.user) {
+    console.error("getUser returned no user despite no error");
     return null;
   }
   return data.user;
