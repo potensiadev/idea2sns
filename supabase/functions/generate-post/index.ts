@@ -118,13 +118,13 @@ serve(async (req: Request) => {
     topic: z.string().max(200).optional(),
     content: z.string().max(3000).optional(),
     tone: z.string().min(1),
-    platforms: z.array(platformEnum).min(1).max(3),
+    platforms: z.array(platformEnum).min(1).max(4),
   });
 
   const blogSchema = z.object({
     type: z.literal("blog"),
     blogContent: z.string().min(1),
-    platforms: z.array(platformEnum).min(1).max(3),
+    platforms: z.array(platformEnum).min(1).max(4),
   });
 
   const requestSchema = z.discriminatedUnion("type", [simpleSchema, blogSchema]).superRefine((val, ctx) => {
