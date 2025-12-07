@@ -27,7 +27,7 @@ function withCors(response: Response) {
 }
 
 const OPENAI_URL = "https://api.openai.com/v1/chat/completions";
-const OPENAI_TIMEOUT_MS = 7000;
+const OPENAI_TIMEOUT_MS = 15000;
 
 function fixJson(raw: string): string {
   let t = raw.trim();
@@ -42,7 +42,7 @@ async function callOpenAI(prompt: string): Promise<string> {
 
   const body = {
     model: "gpt-4o-mini",
-    max_tokens: 600,
+    max_tokens: 1200,
     response_format: { type: "json_object" },
     messages: [
       {

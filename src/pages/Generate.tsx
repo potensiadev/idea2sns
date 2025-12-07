@@ -63,19 +63,27 @@ export default function Generate() {
     return false;
   };
 
-  const extractGeneratedContent = (response: any): GeneratedContent | null => {
+  const extractGeneratedContent = (response: any, selectedPlatforms: string[]): { content: GeneratedContent | null; failedPlatforms: string[] } => {
     const outputs = response?.data?.outputs ?? response?.outputs;
-    if (!outputs || typeof outputs !== 'object') return null;
+    if (!outputs || typeof outputs !== 'object') return { content: null, failedPlatforms: selectedPlatforms };
 
     const content: GeneratedContent = {};
-    Object.entries(outputs).forEach(([platform, value]) => {
-      const platformContent = (value as any)?.content;
+    const failedPlatforms: string[] = [];
+
+    selectedPlatforms.forEach((platform) => {
+      const platformData = outputs[platform];
+      const platformContent = platformData?.content;
       if (typeof platformContent === 'string' && platformContent.trim()) {
         content[platform] = platformContent;
+      } else {
+        failedPlatforms.push(platform);
       }
     });
 
-    return Object.keys(content).length > 0 ? content : null;
+    return {
+      content: Object.keys(content).length > 0 ? content : null,
+      failedPlatforms
+    };
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -120,14 +128,20 @@ export default function Generate() {
         return;
       }
 
-      const posts = extractGeneratedContent(data);
+      const { content: posts, failedPlatforms } = extractGeneratedContent(data, platforms);
       if (!posts) {
         toast.error('Failed to generate content. Please try again.');
         return;
       }
 
       setResults(posts);
-      toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
+
+      const successCount = platforms.length - failedPlatforms.length;
+      if (failedPlatforms.length > 0) {
+        toast.warning(`Generated content for ${successCount} platform${successCount > 1 ? 's' : ''}. Failed: ${failedPlatforms.join(', ')}`);
+      } else {
+        toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
+      }
       await loadDailyUsage();
     } catch (err) {
       console.error('Generation error:', err);
