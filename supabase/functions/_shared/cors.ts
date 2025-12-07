@@ -1,23 +1,16 @@
-// Production and local development origins
-const allowedOrigins = [
-  "https://idea2sns.space",
-  "https://www.idea2sns.space",
-  "https://idea2sns.netlify.app",
-  "http://localhost:5173",
-  "http://localhost:8080",
-];
+export function buildCorsHeaders(origin: string | null) {
+  const allowedOrigins = [
+    "https://idea2sns.space",
+    "http://localhost:5173",
+  ];
 
-const fallbackOrigin = allowedOrigins[0];
-
-export function buildCorsHeaders(requestOrigin?: string | null): Record<string, string> {
-  const allowOrigin = requestOrigin && allowedOrigins.includes(requestOrigin) ? requestOrigin : fallbackOrigin;
+  const isAllowed = origin && allowedOrigins.includes(origin);
 
   return {
-    "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, content-type",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Origin": isAllowed ? origin : "null",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Max-Age": "86400",
   };
 }
-
-export const corsHeaders = buildCorsHeaders();
-export { allowedOrigins };
