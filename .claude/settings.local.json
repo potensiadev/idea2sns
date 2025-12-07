@@ -17,7 +17,10 @@
       "Bash(git config:*)",
       "Bash(git apply:*)",
       "Bash(cat:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(curl:*)",
+      "Bash(nslookup:*)",
+      "Bash(npx supabase functions deploy:*)"
     ],
     "deny": [],
     "ask": []
