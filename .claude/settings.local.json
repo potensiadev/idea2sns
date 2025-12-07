@@ -21,7 +21,9 @@
       "Bash(curl:*)",
       "Bash(nslookup:*)",
       "Bash(npx supabase functions deploy:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(npx vite build:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

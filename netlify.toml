@@ -11,6 +11,6 @@
   status = 200
 
 # Environment variables (configure in Netlify dashboard)
-# VITE_SUPABASE_URL
-# VITE_SUPABASE_ANON_KEY
-# VITE_APP_ENV=production
+# SUPABASE_URL
+# SUPABASE_ANON_KEY
+# APP_ENV=production
