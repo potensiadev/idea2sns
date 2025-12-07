@@ -140,7 +140,13 @@ serve(async (req: Request) => {
 
   let payload: RequestShape;
   try {
-    const parsed = requestSchema.safeParse(await req.json());
+    const body = await req.json();
+    if (body === null || body === undefined || typeof body !== "object") {
+      return withCors(
+        jsonError("VALIDATION_ERROR", "Request body must be a JSON object", 400, undefined, corsHeaders),
+      );
+    }
+    const parsed = requestSchema.safeParse(body);
     if (!parsed.success) {
       return withCors(
         jsonError("VALIDATION_ERROR", "Invalid request body", 400, parsed.error.format(), corsHeaders),
