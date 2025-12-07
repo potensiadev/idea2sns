@@ -48,7 +48,7 @@ const PLATFORM_PROMPTS = {
 - Includes relatable insight or observation
 - Can include 1-2 relevant emojis
 - Ends with subtle engagement hook
-- Think Twitter brevity meets Instagram personality`,
+- Think Twitter brevity meets casual, personal tone`,
 
   twitter: `Create a Twitter/X post that:
 - Delivers one clear insight or value point

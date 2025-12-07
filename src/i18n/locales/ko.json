@@ -1,8 +1,10 @@
 {
   "hero": {
-    "title1": "클릭 한 번으로",
-    "title2": "4개 SNS콘텐츠 자동 생성",
-    "description": "콘텐츠를 한 번만 입력하면 AI가 Twitter(X), LinkedIn, Threads에 맞춰 최적화된 게시물을 자동으로 생성합니다.",
+    "badge": "AI 기반 멀티 플랫폼 콘텐츠",
+    "title1": "플랫폼별 게시물을",
+    "title2": "10초 만에 완성",
+    "description": "더 이상 플랫폼마다 콘텐츠를 다시 작성하지 마세요. 아이디어 입력 → X, LinkedIn, Reddit, Threads 최적화 게시물 즉시 생성.",
+    "tagline": "시간 90% 절약. 브랜드 톤 유지. 더 빠르게 성장.",
     "login": "로그인",
     "signup": "회원가입"
   },
@@ -13,41 +15,43 @@
     },
     "hero": {
       "title": {
-        "part1": "1번 클릭으로",
-        "part2": "4개 SNS콘텐츠 동시 생성"
+        "part1": "플랫폼별 게시물을 10초 만에",
+        "part2": "단 한 번의 입력으로"
       },
-      "subtitle": "블로그 글이나 아이디어만 입력하세요. 최적화된 콘텐츠가 자동 생성됩니다",
-      "cta": "무료로 시작하기",
-      "tryDemo": "체험하기"
+      "subtitle": "더 이상 플랫폼마다 콘텐츠를 다시 작성하지 마세요. 아이디어 입력 → X, LinkedIn, Reddit, Threads 최적화 게시물 즉시 생성.",
+      "tagline": "시간 90% 절약. 브랜드 톤 유지. 더 빠르게 성장.",
+      "cta": "첫 게시물 생성하기",
+      "tryDemo": "예시 보기"
     },
     "stats": {
-      "platforms": "지원 플랫폼",
+      "platforms": "플랫폼 최적화",
       "timeSaved": "시간 절약",
       "users": "누적 사용자"
     },
     "features": {
-      "title": "왜 idea2sns를 선택해야 할까요?",
+      "title": "왜 idea2sns인가요?",
       "subtitle": "콘텐츠 마케터와 크리에이터를 위한 완벽한 솔루션",
       "multiPlatform": {
-        "title": "4개 SNS콘텐츠 동시 생성",
-        "description": "Twitter(X), LinkedIn, Threads - 각 플랫폼의 특성에 맞춰 최적화된 콘텐츠를 한 번에 생성합니다"
+        "title": "4개 플랫폼 동시 생성",
+        "description": "X, LinkedIn, Reddit, Threads용 플랫폼별 게시물을 다시 작성 없이 즉시 생성하세요."
       },
       "optimized": {
-        "title": "플랫폼별 최적화",
-        "description": "각 플랫폼의 알고리즘과 사용자 특성을 고려한 맞춤형 콘텐츠로 더 높은 도달률과 참여율을 달성하세요"
+        "title": "플랫폼 최적화 내장",
+        "description": "각 게시물은 플랫폼 규칙, 톤, 길이 및 참여 모범 사례에 따라 조정됩니다."
       },
       "timeSaving": {
-        "title": "시간 90% 절약",
-        "description": "매일 수 시간 걸리던 콘텐츠 작성과 수정 작업을 단 몇 분으로 단축시켜드립니다"
+        "title": "매주 5시간 절약",
+        "description": "주간 콘텐츠 시간이 5시간에서 10분으로 단축되며 즉시 변형이 포함됩니다."
       }
     },
     "benefits": {
       "title": "이런 분들에게 완벽합니다",
       "subtitle": "콘텐츠 제작의 모든 고민을 해결해드립니다",
-      "noRewriting": "각 SNS마다 다시 쓸 필요 없어요",
-      "platformOptimized": "각 플랫폼 특성에 맞춘 자동 최적화",
-      "aiPowered": "최신 AI로 자연스럽게 작성",
-      "instantGeneration": "클릭 한 번으로 즉시 생성",
+      "noRewriting": "한 번 입력 → 4개 플랫폼 게시물",
+      "platformOptimized": "브랜드 톤 자동 적용",
+      "aiPowered": "최적화된 형식으로 높은 참여율",
+      "instantGeneration": "즉시 변형 포함",
+      "professionalQuality": "일관된 브랜드 보이스",
       "multilingual": "다국어 지원으로 글로벌 진출",
       "cta": "지금 시작하기"
     },
@@ -59,10 +63,113 @@
       "natural": "자연스러운",
       "professional": "전문가급"
     },
+    "example": {
+      "title": "직접 확인하세요",
+      "subtitle": "하나의 입력, 4개의 플랫폼별 게시물",
+      "inputLabel": "입력",
+      "inputExample": "돈 들이지 않고 스타트업 홍보하는 방법",
+      "outputs": {
+        "twitter": "짧고 임팩트 있는, 280자 제한 게시물",
+        "linkedin": "전문적이고 구조화된, 간결한 인사이트 중심 캡션",
+        "reddit": "스토리 중심, 도움이 되는, 비홍보성 게시물",
+        "threads": "대화형, 토론 친화적 게시물"
+      },
+      "cta": "내 게시물 생성하기"
+    },
+    "beforeAfter": {
+      "title": "idea2sns 사용 전 vs 후",
+      "before": {
+        "title": "사용 전",
+        "items": [
+          "같은 콘텐츠를 4번 다시 작성",
+          "각 플랫폼에 맞는 톤 추측하기",
+          "일관성 없는 브랜드 스타일",
+          "매주 수 시간 낭비",
+          "매일 포스팅에 번아웃"
+        ]
+      },
+      "after": {
+        "title": "사용 후",
+        "items": [
+          "한 번 입력 → 4개 플랫폼 게시물",
+          "브랜드 톤 자동 적용",
+          "최적화된 형식으로 높은 참여율",
+          "주간 콘텐츠 시간 5시간 → 10분",
+          "일관된 매일 포스팅"
+        ]
+      }
+    },
+    "howItWorks": {
+      "title": "사용 방법",
+      "subtitle": "플랫폼별 콘텐츠를 위한 세 가지 간단한 단계",
+      "steps": [
+        {
+          "title": "아이디어 입력",
+          "description": "주제를 입력하거나 콘텐츠를 붙여넣기"
+        },
+        {
+          "title": "플랫폼 선택",
+          "description": "X, LinkedIn, Reddit, Threads 선택"
+        },
+        {
+          "title": "바로 게시 가능한 콘텐츠 받기",
+          "description": "브랜드 톤 + 변형 포함"
+        }
+      ],
+      "cta": "무료로 생성해보기"
+    },
+    "testimonials": {
+      "title": "사용자 후기",
+      "subtitle": "매일 시간을 절약하는 10,000+ 크리에이터와 함께하세요",
+      "items": [
+        {
+          "quote": "주간 콘텐츠 시간이 6시간에서 15분 이하로 줄었어요.",
+          "author": "마케팅 매니저"
+        },
+        {
+          "quote": "드디어 플랫폼 차이를 이해하는 AI 도구를 찾았어요.",
+          "author": "콘텐츠 크리에이터"
+        },
+        {
+          "quote": "브랜드 보이스가 진짜 게임 체인저에요. 톤이 딱 맞아요.",
+          "author": "스타트업 창업자"
+        }
+      ],
+      "stats": "10,000+ 사용자 | 90% 시간 절약 | 4개 플랫폼 최적화"
+    },
+    "pricing": {
+      "title": "간단한 요금제",
+      "subtitle": "무료로 시작하고, 필요할 때 업그레이드하세요",
+      "free": {
+        "name": "무료",
+        "price": "₩0",
+        "features": [
+          "하루 3개 게시물",
+          "1개 플랫폼",
+          "기본 생성",
+          "제한된 히스토리"
+        ],
+        "cta": "무료로 시작"
+      },
+      "pro": {
+        "name": "프로",
+        "price": "₩12,000/월",
+        "features": [
+          "무제한 플랫폼",
+          "브랜드 보이스",
+          "변형",
+          "블로그 → SNS 변환",
+          "전체 히스토리",
+          "우선 생성"
+        ],
+        "cta": "프로로 업그레이드"
+      }
+    },
     "cta": {
-      "title": "더이상 콘텐츠 만드는데 시간 쓰지마세요",
-      "subtitle": "AI가 만들어주는 완벽한 SNS 콘텐츠를 경험하세요",
-      "button": "무료로 시작하기"
+      "title": "더 나은 소셜 콘텐츠를 몇 분 만에 만들 준비가 되셨나요?",
+      "subtitle": "무료로 시작하고 콘텐츠 제작이 얼마나 빨라지는지 확인하세요.",
+      "button": "무료로 생성하기",
+      "secondary": "예시 결과 보기"
     },
     "footer": {
       "rights": "All rights reserved."

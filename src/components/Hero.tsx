@@ -67,8 +67,12 @@ export const Hero = () => {
         <span className="text-foreground font-extrabold">{t('hero.title2')}</span>
       </h1>
       
-      <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+      <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-6 leading-relaxed font-light animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
         {t('hero.description')}
+      </p>
+
+      <p className="text-lg md:text-xl text-primary font-semibold max-w-2xl mx-auto mb-12 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
+        {t('hero.tagline')}
       </p>
     </section>
   );

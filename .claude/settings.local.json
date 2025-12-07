@@ -23,7 +23,8 @@
       "Bash(npx supabase functions deploy:*)",
       "Bash(npx supabase:*)",
       "Bash(npx vite build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []

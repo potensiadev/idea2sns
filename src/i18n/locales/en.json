@@ -1,9 +1,10 @@
 {
   "hero": {
     "badge": "AI-Powered Multi-Platform Content",
-    "title1": "Create Posts for 4 Platforms",
-    "title2": "in One Click",
-    "description": "Enter your content once and let AI generate optimized posts for Twitter (X), LinkedIn, and Threads — each tailored to the platform's unique style.",
+    "title1": "Create Platform-Ready Posts",
+    "title2": "in 10 Seconds",
+    "description": "Stop rewriting content for every platform. Enter your idea → instantly get optimized posts for X, LinkedIn, Reddit, and Threads.",
+    "tagline": "Save 90% of your time. Keep your brand voice. Grow faster.",
     "login": "Login",
     "signup": "Sign Up"
   },
@@ -14,42 +15,43 @@
     },
     "hero": {
       "title": {
-        "part1": "Create Contents",
-        "part2": "for 4 SNS Channels",
-        "part3": "with One Click"
+        "part1": "Create Platform-Ready Posts",
+        "part2": "in 10 Seconds — From Just One Input"
       },
-      "subtitle": "Enter your blog post or idea, and AI will automatically generate platform-optimized content for each social media",
-      "cta": "Start for Free",
-      "tryDemo": "Try Demo"
+      "subtitle": "Stop rewriting content for every platform. Enter your idea → instantly get optimized posts for X, LinkedIn, Reddit, and Threads.",
+      "tagline": "Save 90% of your time. Keep your brand voice. Grow faster.",
+      "cta": "Generate My First Posts",
+      "tryDemo": "View Example Posts"
     },
     "stats": {
-      "platforms": "Platforms",
+      "platforms": "Platforms Optimized",
       "timeSaved": "Time Saved",
       "users": "Users"
     },
     "features": {
-      "title": "Why Choose idea2sns?",
+      "title": "Why idea2sns?",
       "subtitle": "The perfect solution for content marketers and creators",
       "multiPlatform": {
         "title": "4 Platforms at Once",
-        "description": "Generate optimized content for Twitter (X), LinkedIn, and Threads - all tailored to each platform's unique characteristics"
+        "description": "Create platform-specific posts for X, LinkedIn, Reddit, and Threads instantly — without rewriting anything."
       },
       "optimized": {
-        "title": "Platform-Optimized",
-        "description": "Achieve higher reach and engagement with customized content that considers each platform's algorithm and user behavior"
+        "title": "Built-In Platform Optimization",
+        "description": "Each post is adjusted based on platform rules, tone, length, and engagement best practices."
       },
       "timeSaving": {
-        "title": "Save 90% of Time",
-        "description": "Reduce hours of content writing and editing work to just a few minutes every day"
+        "title": "Save 5 Hours Every Week",
+        "description": "Weekly content time reduced from 5 hours → 10 minutes with instant variations included."
       }
     },
     "benefits": {
       "title": "Perfect for You",
       "subtitle": "Solve all your content creation challenges",
-      "noRewriting": "No need to rewrite for each platform",
-      "platformOptimized": "Automatic optimization for each platform",
-      "aiPowered": "Natural writing with latest AI technology",
-      "instantGeneration": "Instant generation with one click",
+      "noRewriting": "One input → 4 platform-ready posts",
+      "platformOptimized": "Brand voice automatically applied",
+      "aiPowered": "Higher engagement with optimized formats",
+      "instantGeneration": "Instant variations included",
+      "professionalQuality": "Consistent Brand Voice",
       "multilingual": "Multi-language support for global reach",
       "cta": "Get Started Now"
     },
@@ -60,10 +62,113 @@
       "quality": "Content Quality",
       "professional": "Professional"
     },
+    "example": {
+      "title": "See It In Action",
+      "subtitle": "One input, four platform-ready posts",
+      "inputLabel": "Your Input",
+      "inputExample": "How to promote your startup without spending money",
+      "outputs": {
+        "twitter": "Short, punchy, 280-character limit post optimized for engagement",
+        "linkedin": "Professional, structured, concise insight-driven caption",
+        "reddit": "Story-driven, helpful, non-promotional post",
+        "threads": "Conversational, discussion-friendly post"
+      },
+      "cta": "Generate Your Own Posts"
+    },
+    "beforeAfter": {
+      "title": "Before vs After idea2sns",
+      "before": {
+        "title": "Before",
+        "items": [
+          "Rewriting the same content 4 times",
+          "Guessing the right tone for each platform",
+          "Inconsistent brand style",
+          "Hours wasted every week",
+          "Burnout from daily posting"
+        ]
+      },
+      "after": {
+        "title": "After",
+        "items": [
+          "One input → 4 platform-ready posts",
+          "Brand voice automatically applied",
+          "Higher engagement with optimized formats",
+          "Weekly content time reduced from 5 hours → 10 minutes",
+          "Consistent daily posting"
+        ]
+      }
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "subtitle": "Three simple steps to platform-ready content",
+      "steps": [
+        {
+          "title": "Enter Your Idea",
+          "description": "Type your topic or paste your content"
+        },
+        {
+          "title": "Select Platforms",
+          "description": "Choose X, LinkedIn, Reddit, Threads"
+        },
+        {
+          "title": "Get Ready-to-Post Content",
+          "description": "Brand voice + variations included"
+        }
+      ],
+      "cta": "Try a Free Generation"
+    },
+    "testimonials": {
+      "title": "What Users Say",
+      "subtitle": "Join 10,000+ creators saving time every day",
+      "items": [
+        {
+          "quote": "This cut my weekly content time from 6 hours to under 15 minutes.",
+          "author": "Marketing Manager"
+        },
+        {
+          "quote": "Finally an AI tool that understands platform differences.",
+          "author": "Content Creator"
+        },
+        {
+          "quote": "Brand Voice is the real game-changer. Tonality is spot on.",
+          "author": "Startup Founder"
+        }
+      ],
+      "stats": "10,000+ users | 90% time saved | 4 platforms optimized"
+    },
+    "pricing": {
+      "title": "Simple Pricing",
+      "subtitle": "Start free, upgrade when you need more",
+      "free": {
+        "name": "Free",
+        "price": "$0",
+        "features": [
+          "3 posts/day",
+          "1 platform",
+          "Basic generation",
+          "Limited history"
+        ],
+        "cta": "Start Free"
+      },
+      "pro": {
+        "name": "Pro",
+        "price": "$9/mo",
+        "features": [
+          "Unlimited platforms",
+          "Brand Voice",
+          "Variations",
+          "Blog → SNS repurposing",
+          "Full history",
+          "Priority generation"
+        ],
+        "cta": "Upgrade to Pro"
+      }
+    },
     "cta": {
-      "title": "Start Now",
-      "subtitle": "Start for free and experience perfect social media content created by AI",
-      "button": "Start for Free"
+      "title": "Ready to Create Better Social Content — in Minutes?",
+      "subtitle": "Start for free and see how fast content creation becomes.",
+      "button": "Generate for Free",
+      "secondary": "View Example Outputs"
     },
     "footer": {
       "rights": "All rights reserved."

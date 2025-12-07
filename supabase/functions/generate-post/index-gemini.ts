@@ -57,7 +57,7 @@ Follow these guidelines:
 - Include a relatable insight or tiny moment of clarity
 - You may use 1–2 emojis, but only if they fit naturally
 - End with a light engagement nudge, not a CTA
-- Style should blend Twitter brevity with Instagram personality
+- Style should blend Twitter brevity with casual, personal tone
 - Avoid repeating any phrasing used in other platform outputs
 - Do not use # or ## unless they're actual hashtags (rarely needed here)`,
 
