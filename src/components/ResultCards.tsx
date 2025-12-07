@@ -29,6 +29,12 @@ const PLATFORM_CONFIG = {
     color: "border-slate-700",
     bgColor: "bg-slate-700/10",
   },
+  reddit: {
+    name: "Reddit",
+    icon: "👽",
+    color: "border-orange-500",
+    bgColor: "bg-orange-500/10",
+  },
 } as const;
 
 export const ResultCards = ({ content }: ResultCardsProps) => {
