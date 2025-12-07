@@ -90,7 +90,7 @@ export default function Generate() {
       setIsLoading(true);
       setResults(null);
 
-      const { data, error } = await edgeFunctions.generatePost({
+      const { data } = await edgeFunctions.generatePost({
         type: 'simple',
         topic: topic || 'General post',
         content: content || '',
@@ -98,11 +98,6 @@ export default function Generate() {
         platforms,
         brandVoiceId: null,
       });
-
-      if (error) {
-        toast.error(error);
-        return;
-      }
 
       if (data?.status === 'error') {
         const code = data.error?.code;
@@ -124,7 +119,8 @@ export default function Generate() {
       }
     } catch (err) {
       console.error('Generation error:', err);
-      toast.error('An error occurred while generating content');
+      const message = err instanceof Error ? err.message : 'An error occurred while generating content';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

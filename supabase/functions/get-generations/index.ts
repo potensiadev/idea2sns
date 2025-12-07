@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std/http/server.ts";
 import type { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { jsonError, jsonOk } from "../_shared/errors.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 import { createSupabaseClient, getAuthenticatedUser } from "../_shared/supabaseClient.ts";
 
 const typeEnum = z.enum(["simple", "variation", "blog"]);
@@ -141,6 +141,7 @@ async function handler(req: Request) {
 }
 
 serve(async (req: Request) => {
+  const corsHeaders = buildCorsHeaders(req.headers.get("origin"));
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }

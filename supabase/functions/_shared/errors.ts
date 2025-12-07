@@ -1,3 +1,5 @@
+import { buildCorsHeaders } from "./cors.ts";
+
 export type ErrorCode =
   | "VALIDATION_ERROR"
   | "AUTH_REQUIRED"
@@ -6,14 +8,15 @@ export type ErrorCode =
   | "PROVIDER_ERROR"
   | "INTERNAL_ERROR";
 
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-webhook-signature",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+const defaultCorsHeaders = buildCorsHeaders();
 
-export function jsonError(code: ErrorCode, message: string, status = 400, details?: unknown) {
+export function jsonError(
+  code: ErrorCode,
+  message: string,
+  status = 400,
+  details?: unknown,
+  corsHeaders: HeadersInit = defaultCorsHeaders,
+) {
   return new Response(
     JSON.stringify({
       status: "error",
@@ -23,7 +26,7 @@ export function jsonError(code: ErrorCode, message: string, status = 400, detail
   );
 }
 
-export function jsonOk(data: unknown) {
+export function jsonOk(data: unknown, corsHeaders: HeadersInit = defaultCorsHeaders) {
   return new Response(JSON.stringify({ status: "ok", data }), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
