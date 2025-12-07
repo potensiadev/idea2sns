@@ -5,7 +5,7 @@ import {
   Linkedin,
   Twitter,
   MessageCircle,
-  Reddit,
+  Megaphone,
 } from 'lucide-react';
 
 interface PlatformSelectorProps {
@@ -18,7 +18,7 @@ const PLATFORMS = [
   { id: 'twitter', name: 'Twitter (X)', icon: Twitter },
   { id: 'linkedin', name: 'LinkedIn', icon: Linkedin },
   { id: 'threads', name: 'Threads', icon: MessageCircle },
-  { id: 'reddit', name: 'Reddit', icon: Reddit },
+  { id: 'reddit', name: 'Reddit', icon: Megaphone },
 ];
 
 export const PlatformSelector = ({ selected, onChange, maxPlatforms }: PlatformSelectorProps) => {
