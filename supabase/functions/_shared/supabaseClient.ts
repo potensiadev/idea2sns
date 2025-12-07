@@ -8,8 +8,13 @@ export function createSupabaseClient(req: Request): SupabaseClient {
     throw new Error("Missing Supabase environment configuration");
   }
 
+  // ⭐ 핵심 수정: Authorization 포함 전체 헤더를 전달
+  const forwardedHeaders = Object.fromEntries(req.headers);
+
   return createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } },
+    global: {
+      headers: forwardedHeaders,
+    },
     auth: {
       autoRefreshToken: false,
       persistSession: false,
