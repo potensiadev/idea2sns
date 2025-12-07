@@ -67,6 +67,21 @@ export default function BlogToSNS() {
     return false;
   };
 
+  const extractGeneratedContent = (response: any): GeneratedContent | null => {
+    const outputs = response?.data?.outputs ?? response?.outputs;
+    if (!outputs || typeof outputs !== 'object') return null;
+
+    const content: GeneratedContent = {};
+    Object.entries(outputs).forEach(([platform, value]) => {
+      const platformContent = (value as any)?.content;
+      if (typeof platformContent === 'string' && platformContent.trim()) {
+        content[platform] = platformContent;
+      }
+    });
+
+    return Object.keys(content).length > 0 ? content : null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -113,18 +128,15 @@ export default function BlogToSNS() {
         return;
       }
 
-      if (data && (data as any).data?.posts) {
-        const posts = (data as any).data.posts as GeneratedContent;
-        setResults(posts);
-        toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
-        await loadDailyUsage();
-      } else if ((data as any)?.posts) {
-        setResults((data as any).posts);
-        toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
-        await loadDailyUsage();
-      } else {
+      const posts = extractGeneratedContent(data);
+      if (!posts) {
         toast.error('Failed to generate content. Please try again.');
+        return;
       }
+
+      setResults(posts);
+      toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
+      await loadDailyUsage();
     } catch (err) {
       console.error('Generation error:', err);
       const message = err instanceof Error ? err.message : 'An error occurred while generating content';

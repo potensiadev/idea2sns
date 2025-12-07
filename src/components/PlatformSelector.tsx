@@ -5,6 +5,7 @@ import {
   Linkedin,
   Twitter,
   MessageCircle,
+  Megaphone,
 } from 'lucide-react';
 
 interface PlatformSelectorProps {
@@ -17,6 +18,7 @@ const PLATFORMS = [
   { id: 'twitter', name: 'Twitter (X)', icon: Twitter },
   { id: 'linkedin', name: 'LinkedIn', icon: Linkedin },
   { id: 'threads', name: 'Threads', icon: MessageCircle },
+  { id: 'reddit', name: 'Reddit', icon: Megaphone },
 ];
 
 export const PlatformSelector = ({ selected, onChange, maxPlatforms }: PlatformSelectorProps) => {
@@ -39,7 +41,7 @@ export const PlatformSelector = ({ selected, onChange, maxPlatforms }: PlatformS
           {selected.length}/{PLATFORMS.length} selected
         </span>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {PLATFORMS.map((platform) => {
           const Icon = platform.icon;
           const isSelected = selected.includes(platform.id);
