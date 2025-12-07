@@ -66,7 +66,7 @@ async function handler(req: Request) {
 
   try {
     // -------- AUTH -------- //
-    const user = await getAuthenticatedUser(supabase);
+    const user = await getAuthenticatedUser(supabase, req);
     if (!user) {
       return jsonError("AUTH_REQUIRED", "Authentication required", 401);
     }
