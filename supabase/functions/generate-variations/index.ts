@@ -5,17 +5,27 @@ import { z } from "https://deno.land/x/zod@v3.23.8/mod.ts";
 import { aiRouter } from "../_shared/aiRouter.ts";
 import { jsonError, jsonOk } from "../_shared/errors.ts";
 import { buildCorsHeaders } from "../_shared/cors.ts";
-import { BrandVoice, variationPromptBuilder, VariationStyle } from "../_shared/promptBuilder.ts";
-import { createSupabaseClient, getAuthenticatedUser } from "../_shared/supabaseClient.ts";
+import {
+  BrandVoice,
+  variationPromptBuilder,
+  VariationStyle,
+} from "../_shared/promptBuilder.ts";
+import {
+  createSupabaseClient,
+  getAuthenticatedUser,
+} from "../_shared/supabaseClient.ts";
 import { usageGuard } from "../_shared/usageGuard.ts";
 
-const styleEnum = z.enum(["short", "long", "casual", "formal", "hook-first", "emotional"]);
+const styleEnum = z.enum([
+  "short",
+  "long",
+  "casual",
+  "formal",
+  "hook-first",
+  "emotional",
+]);
 
-const requestSchema = z.object({
-  baseText: z.string().min(1).max(3000),
-  styles: z.array(styleEnum).min(1),
-  brandVoiceId: z.string().uuid().nullable().optional(),
-});
+// ⛔️ requestSchema는 더 이상 top-level에 두지 않는다.
 
 async function resolveBrandVoice(
   supabase: SupabaseClient,
@@ -39,6 +49,13 @@ async function resolveBrandVoice(
 }
 
 async function handler(req: Request) {
+  // ✅ Zod schema는 handler 내부에 정의 (OPTIONS에서는 실행 안 됨)
+  const requestSchema = z.object({
+    baseText: z.string().min(1).max(3000),
+    styles: z.array(styleEnum).min(1),
+    brandVoiceId: z.string().uuid().nullable().optional(),
+  });
+
   let supabase: SupabaseClient;
   try {
     supabase = createSupabaseClient(req);
@@ -48,17 +65,24 @@ async function handler(req: Request) {
   }
 
   try {
+    // -------- AUTH -------- //
     const user = await getAuthenticatedUser(supabase);
     if (!user) {
       return jsonError("AUTH_REQUIRED", "Authentication required", 401);
     }
 
+    // -------- BODY VALIDATION -------- //
     let payload: z.infer<typeof requestSchema>;
     try {
       const body = await req.json();
       const result = requestSchema.safeParse(body);
       if (!result.success) {
-        return jsonError("VALIDATION_ERROR", "Invalid request body", 400, result.error.format());
+        return jsonError(
+          "VALIDATION_ERROR",
+          "Invalid request body",
+          400,
+          result.error.format(),
+        );
       }
       payload = result.data;
     } catch (error) {
@@ -70,6 +94,7 @@ async function handler(req: Request) {
       );
     }
 
+    // -------- USAGE GUARD -------- //
     try {
       await usageGuard(supabase, user.id, "generate_variations", {
         variationsRequested: payload.styles.length,
@@ -80,25 +105,45 @@ async function handler(req: Request) {
         return error;
       }
       console.error("Usage guard error", error);
-      return jsonError("INTERNAL_ERROR", "Failed to enforce usage limits", 500);
+      return jsonError(
+        "INTERNAL_ERROR",
+        "Failed to enforce usage limits",
+        500,
+      );
     }
 
+    // -------- BRAND VOICE LOAD -------- //
     let brandVoice: BrandVoice = null;
     try {
-      brandVoice = await resolveBrandVoice(supabase, user.id, payload.brandVoiceId ?? null);
+      brandVoice = await resolveBrandVoice(
+        supabase,
+        user.id,
+        payload.brandVoiceId ?? null,
+      );
     } catch (error) {
       console.error(error);
-      return jsonError("INTERNAL_ERROR", "Failed to load brand voice", 500);
+      return jsonError(
+        "INTERNAL_ERROR",
+        "Failed to load brand voice",
+        500,
+      );
     }
 
+    // -------- AI VARIATIONS -------- //
     const variations: Partial<Record<VariationStyle, string>> = {};
 
     for (const style of payload.styles) {
-      const prompt = variationPromptBuilder({ baseText: payload.baseText, style, brandVoice });
+      const prompt = variationPromptBuilder({
+        baseText: payload.baseText,
+        style,
+        brandVoice,
+      });
+
       let aiResult;
       try {
         aiResult = await aiRouter.generate({
-          systemPrompt: "You are an expert social content editor. Return plain text only.",
+          systemPrompt:
+            "You are an expert social content editor. Return plain text only.",
           userPrompt: prompt,
         });
       } catch (error) {
@@ -114,12 +159,17 @@ async function handler(req: Request) {
       const content = aiResult.text?.trim();
       if (!content) {
         console.error("Empty AI content for style", style);
-        return jsonError("PROVIDER_ERROR", "AI response missing content", 502);
+        return jsonError(
+          "PROVIDER_ERROR",
+          "AI response missing content",
+          502,
+        );
       }
 
-      variations[style] = content;
+      variations[style as VariationStyle] = content;
     }
 
+    // -------- SAVE VARIATIONS -------- //
     const insertPayload = {
       user_id: user.id,
       type: "variation",
@@ -127,11 +177,17 @@ async function handler(req: Request) {
       output: variations,
     };
 
-    const { error: generationError } = await supabase.from("generations").insert(insertPayload);
+    const { error: generationError } = await supabase
+      .from("generations")
+      .insert(insertPayload);
 
     if (generationError) {
       console.error("Failed to save variations", generationError);
-      return jsonError("INTERNAL_ERROR", "Failed to save variations", 500);
+      return jsonError(
+        "INTERNAL_ERROR",
+        "Failed to save variations",
+        500,
+      );
     }
 
     return jsonOk({ variations });
@@ -148,6 +204,8 @@ async function handler(req: Request) {
 
 serve(async (req: Request) => {
   const corsHeaders = buildCorsHeaders(req.headers.get("origin"));
+
+  // ✅ OPTIONS는 여기서 바로 리턴 → handler/req.json()까지 안 내려감
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
