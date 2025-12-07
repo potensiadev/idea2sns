@@ -88,7 +88,7 @@ index cc65e79..73ecb84 100644
    "hero": {
      "badge": "AI-Powered Multi-Platform Content",
 -    "title1": "Create Posts for 5 Platforms",
-+    "title1": "Create Posts for 3 Platforms",
++    "title1": "Create Posts for 4 Platforms",
      "title2": "in One Click",
 -    "description": "Enter your content once and let AI generate optimized posts for Reddit, Threads, Instagram, Twitter, and Pinterest — each tailored to the platform's unique style.",
 +    "description": "Enter your content once and let AI generate optimized posts for Twitter (X), LinkedIn, and Threads — each tailored to the platform's unique style.",
@@ -100,7 +100,7 @@ index cc65e79..73ecb84 100644
        "title": {
          "part1": "Create Contents",
 -        "part2": "for 6 SNS Channels",
-+        "part2": "for 3 SNS Channels",
++        "part2": "for 4 SNS Channels",
          "part3": "with One Click"
        },
        "subtitle": "Enter your blog post or idea, and AI will automatically generate platform-optimized content for each social media",
@@ -110,7 +110,7 @@ index cc65e79..73ecb84 100644
        "multiPlatform": {
 -        "title": "5 Platforms at Once",
 -        "description": "Generate optimized content for Reddit, Threads, Instagram, Twitter, and Pinterest - all tailored to each platform's unique characteristics"
-+        "title": "3 Platforms at Once",
++        "title": "4 Platforms at Once",
 +        "description": "Generate optimized content for Twitter (X), LinkedIn, and Threads - all tailored to each platform's unique characteristics"
        },
        "optimized": {
@@ -137,7 +137,7 @@ index f539fbb..ac5c505 100644
      "title1": "클릭 한 번으로",
 -    "title2": "6개 SNS콘텐츠 자동 생성",
 -    "description": "콘텐츠를 한 번만 입력하면 AI가 Reddit, Threads, Instagram, Twitter, Pinterest에 최적화된 게시물을 자동으로 생성합니다.",
-+    "title2": "3개 SNS콘텐츠 자동 생성",
++    "title2": "4개 SNS콘텐츠 자동 생성",
 +    "description": "콘텐츠를 한 번만 입력하면 AI가 Twitter(X), LinkedIn, Threads에 맞춰 최적화된 게시물을 자동으로 생성합니다.",
      "login": "로그인",
      "signup": "회원가입"
@@ -147,7 +147,7 @@ index f539fbb..ac5c505 100644
        "title": {
          "part1": "1번 클릭으로",
 -        "part2": "6개 SNS콘텐츠 동시 생성"
-+        "part2": "3개 SNS콘텐츠 동시 생성"
++        "part2": "4개 SNS콘텐츠 동시 생성"
        },
        "subtitle": "블로그 글이나 아이디어만 입력하세요. 최적화된 콘텐츠가 자동 생성됩니다",
        "cta": "무료로 시작하기",
@@ -157,7 +157,7 @@ index f539fbb..ac5c505 100644
        "multiPlatform": {
 -        "title": "6개 SNS콘텐츠 동시 생성",
 -        "description": "Reddit, Threads, Instagram, Twitter, Pinterest - 각 플랫폼의 특성에 맞춰 최적화된 콘텐츠를 한 번에 생성합니다"
-+        "title": "3개 SNS콘텐츠 동시 생성",
++        "title": "4개 SNS콘텐츠 동시 생성",
 +        "description": "Twitter(X), LinkedIn, Threads - 각 플랫폼의 특성에 맞춰 최적화된 콘텐츠를 한 번에 생성합니다"
        },
        "optimized": {

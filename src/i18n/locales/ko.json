@@ -1,7 +1,7 @@
 {
   "hero": {
     "title1": "클릭 한 번으로",
-    "title2": "3개 SNS콘텐츠 자동 생성",
+    "title2": "4개 SNS콘텐츠 자동 생성",
     "description": "콘텐츠를 한 번만 입력하면 AI가 Twitter(X), LinkedIn, Threads에 맞춰 최적화된 게시물을 자동으로 생성합니다.",
     "login": "로그인",
     "signup": "회원가입"
@@ -14,7 +14,7 @@
     "hero": {
       "title": {
         "part1": "1번 클릭으로",
-        "part2": "3개 SNS콘텐츠 동시 생성"
+        "part2": "4개 SNS콘텐츠 동시 생성"
       },
       "subtitle": "블로그 글이나 아이디어만 입력하세요. 최적화된 콘텐츠가 자동 생성됩니다",
       "cta": "무료로 시작하기",
@@ -29,7 +29,7 @@
       "title": "왜 idea2sns를 선택해야 할까요?",
       "subtitle": "콘텐츠 마케터와 크리에이터를 위한 완벽한 솔루션",
       "multiPlatform": {
-        "title": "3개 SNS콘텐츠 동시 생성",
+        "title": "4개 SNS콘텐츠 동시 생성",
         "description": "Twitter(X), LinkedIn, Threads - 각 플랫폼의 특성에 맞춰 최적화된 콘텐츠를 한 번에 생성합니다"
       },
       "optimized": {
@@ -44,11 +44,10 @@
     "benefits": {
       "title": "이런 분들에게 완벽합니다",
       "subtitle": "콘텐츠 제작의 모든 고민을 해결해드립니다",
-      "noRewriting": "플랫폼마다 다시 쓸 필요 없음",
+      "noRewriting": "각 SNS마다 다시 쓸 필요 없어요",
       "platformOptimized": "각 플랫폼 특성에 맞춘 자동 최적화",
       "aiPowered": "최신 AI로 자연스럽게 작성",
       "instantGeneration": "클릭 한 번으로 즉시 생성",
-      "professionalQuality": "전문가급 퀄리티 보장",
       "multilingual": "다국어 지원으로 글로벌 진출",
       "cta": "지금 시작하기"
     },

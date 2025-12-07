@@ -1,7 +1,7 @@
 {
   "hero": {
     "badge": "AI-Powered Multi-Platform Content",
-    "title1": "Create Posts for 3 Platforms",
+    "title1": "Create Posts for 4 Platforms",
     "title2": "in One Click",
     "description": "Enter your content once and let AI generate optimized posts for Twitter (X), LinkedIn, and Threads — each tailored to the platform's unique style.",
     "login": "Login",
@@ -15,7 +15,7 @@
     "hero": {
       "title": {
         "part1": "Create Contents",
-        "part2": "for 3 SNS Channels",
+        "part2": "for 4 SNS Channels",
         "part3": "with One Click"
       },
       "subtitle": "Enter your blog post or idea, and AI will automatically generate platform-optimized content for each social media",
@@ -31,7 +31,7 @@
       "title": "Why Choose idea2sns?",
       "subtitle": "The perfect solution for content marketers and creators",
       "multiPlatform": {
-        "title": "3 Platforms at Once",
+        "title": "4 Platforms at Once",
         "description": "Generate optimized content for Twitter (X), LinkedIn, and Threads - all tailored to each platform's unique characteristics"
       },
       "optimized": {
@@ -50,7 +50,6 @@
       "platformOptimized": "Automatic optimization for each platform",
       "aiPowered": "Natural writing with latest AI technology",
       "instantGeneration": "Instant generation with one click",
-      "professionalQuality": "Professional-grade quality guaranteed",
       "multilingual": "Multi-language support for global reach",
       "cta": "Get Started Now"
     },
