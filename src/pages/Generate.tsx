@@ -218,12 +218,6 @@ export default function Generate() {
                   maxPlatforms={maxPlatforms}
                 />
 
-                {maxPlatforms !== null && (
-                  <p className="text-xs text-muted-foreground -mt-1">
-                    Select up to {maxPlatforms} platforms
-                  </p>
-                )}
-
                 <Button
                   type="submit"
                   className="w-full"

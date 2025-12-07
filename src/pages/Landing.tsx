@@ -75,7 +75,6 @@ const Landing = () => {
             <br />
             {t("landing.hero.title.part2")}
             <br />
-            <span className="bg-gradient-primary bg-clip-text text-transparent">{t("landing.hero.title.part3")}</span>
           </h2>
 
           <p className="text-xl md:text-2xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed">

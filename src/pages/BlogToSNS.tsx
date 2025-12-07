@@ -188,15 +188,13 @@ export default function BlogToSNS() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="blog-content">Blog Text</Label>
-                    {maxBlogLength && (
-                      <span className={`text-xs ${
-                        blogLengthExceeded
-                          ? 'text-destructive font-medium'
-                          : 'text-muted-foreground'
-                      }`}>
-                        {blogContent.length.toLocaleString()} / {maxBlogLength.toLocaleString()}
-                      </span>
-                    )}
+                    <span className={`text-xs ${
+                      blogLengthExceeded
+                        ? 'text-destructive font-medium'
+                        : 'text-muted-foreground'
+                    }`}>
+                      {blogContent.length.toLocaleString()} / {(maxBlogLength ?? 10000).toLocaleString()}
+                    </span>
                   </div>
                   <Textarea
                     id="blog-content"
@@ -219,12 +217,6 @@ export default function BlogToSNS() {
                   onChange={handlePlatformChange}
                   maxPlatforms={maxPlatforms}
                 />
-
-                {maxPlatforms !== null && (
-                  <p className="text-xs text-muted-foreground -mt-1">
-                    Select up to {maxPlatforms} platforms
-                  </p>
-                )}
 
                 <Button
                   type="submit"

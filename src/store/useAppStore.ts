@@ -32,17 +32,17 @@ interface AppState {
 
 export const DEFAULT_LIMITS: LimitsConfig = {
   daily_generations: 5,
-  max_platforms_per_request: 3,
+  max_platforms_per_request: 4,
   blog_to_sns: true,
-  max_blog_length: 2000,
+  max_blog_length: 3000,
   priority_routing: false,
 };
 
 export const PRO_LIMITS: LimitsConfig = {
-  daily_generations: null,
-  max_platforms_per_request: 3,
+  daily_generations: 30,
+  max_platforms_per_request: 4,
   blog_to_sns: true,
-  max_blog_length: null,
+  max_blog_length: 10000,
   priority_routing: true,
 };
 
