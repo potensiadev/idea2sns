@@ -17,7 +17,7 @@ export const runtime = "edge";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://idea2sns.space",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-client-info, apikey",
 };
 
 function withCors(response: Response) {
