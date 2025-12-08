@@ -250,6 +250,138 @@
   "platforms": {
     "twitter": "Twitter (X)",
     "linkedin": "LinkedIn",
-    "threads": "Threads"
+    "threads": "Threads",
+    "reddit": "Reddit"
+  },
+  "generate": {
+    "title": "Generate Content",
+    "description": "Transform your ideas into engaging social media posts",
+    "dailyLimit": {
+      "reached": "Daily limit reached ({{used}}/{{total}}). Upgrade to Pro for unlimited generations!",
+      "usage": "{{used}}/{{total}} generations used today"
+    },
+    "upgradeToPro": "Upgrade to Pro",
+    "card": {
+      "title": "Create Social Media Post",
+      "description": "Generate AI-powered content optimized for each platform"
+    },
+    "form": {
+      "topic": "Topic or Title",
+      "topicPlaceholder": "e.g., New product launch, Company milestone...",
+      "content": "Content Details (Optional)",
+      "contentPlaceholder": "Add more context, key points, or details...",
+      "tone": "Tone (Optional)",
+      "tonePlaceholder": "e.g., Professional, Casual, Friendly..."
+    },
+    "button": {
+      "generating": "Generating...",
+      "generate": "Generate Posts"
+    },
+    "validation": {
+      "dailyLimitReached": "Daily limit reached",
+      "selectPlatform": "Select at least one platform",
+      "addContent": "Add a topic or content to continue"
+    },
+    "loading": {
+      "title": "Generating your content...",
+      "description": "This may take a few moments"
+    },
+    "empty": {
+      "title": "Ready to create?",
+      "description": "Fill in the form and select your platforms to generate optimized social media content"
+    },
+    "toast": {
+      "dailyLimit": "Daily limit reached",
+      "platformLimit": "You can select up to {{max}} platforms",
+      "selectPlatform": "Please select at least one platform",
+      "provideContent": "Please provide a topic or content",
+      "failed": "Failed to generate content. Please try again.",
+      "successSingle": "Generated content for {{count}} platform!",
+      "successMultiple": "Generated content for {{count}} platforms!",
+      "partialSuccess": "Generated content for {{success}} platform(s). Failed: {{failed}}",
+      "error": "An error occurred while generating content"
+    }
+  },
+  "blogToSns": {
+    "title": "Blog to Social Media",
+    "description": "Convert your blog posts into optimized social media content",
+    "dailyLimit": {
+      "reached": "Daily limit reached ({{used}}/{{total}}). Upgrade to Pro for unlimited generations!",
+      "usage": "{{used}}/{{total}} generations used today"
+    },
+    "upgradeToPro": "Upgrade to Pro",
+    "card": {
+      "title": "Blog Content",
+      "description": "Paste your blog text to generate platform-optimized posts"
+    },
+    "form": {
+      "blogText": "Blog Text",
+      "blogPlaceholder": "Paste your blog post content here...",
+      "lengthExceeded": "Content exceeds your plan limit. Upgrade to Pro for longer posts."
+    },
+    "button": {
+      "converting": "Converting...",
+      "convert": "Convert to Social Posts"
+    },
+    "validation": {
+      "dailyLimitReached": "Daily limit reached",
+      "selectPlatform": "Select at least one platform",
+      "lengthExceeded": "Blog content exceeds limit",
+      "pasteContent": "Paste blog content to continue"
+    },
+    "loading": {
+      "title": "Converting your blog post...",
+      "description": "This may take a few moments"
+    },
+    "empty": {
+      "title": "Ready to convert?",
+      "description": "Paste your blog content to generate platform-optimized social media posts"
+    },
+    "toast": {
+      "dailyLimit": "Daily limit reached",
+      "platformLimit": "You can select up to {{max}} platforms",
+      "selectPlatform": "Please select at least one platform",
+      "lengthExceeded": "Blog content exceeds your plan limit",
+      "minLength": "Blog content must be at least 10 characters",
+      "maxLength": "Blog content must be less than 50,000 characters",
+      "failed": "Failed to generate content. Please try again.",
+      "successSingle": "Generated content for {{count}} platform!",
+      "successMultiple": "Generated content for {{count}} platforms!",
+      "error": "An error occurred while generating content"
+    }
+  },
+  "appLayout": {
+    "nav": {
+      "generate": "Generate",
+      "blogToSns": "Blog to SNS"
+    },
+    "usage": {
+      "today": "{{count}} today"
+    },
+    "upgradeToPro": "Upgrade to Pro",
+    "userMenu": {
+      "proPlan": "Pro Plan",
+      "freePlan": "Free Plan",
+      "settings": "Settings",
+      "signOut": "Sign Out"
+    }
+  },
+  "platformSelector": {
+    "label": "Select Platforms",
+    "selected": "{{count}}/{{total}} selected"
+  },
+  "resultCards": {
+    "title": "Your Generated Content",
+    "description": "Content optimized for {{count}} platform",
+    "descriptionPlural": "Content optimized for {{count}} platforms",
+    "noContent": "No content generated",
+    "chars": "chars",
+    "copyToClipboard": "Copy to Clipboard",
+    "copied": "Copied {{platform}} content to clipboard!"
+  },
+  "common": {
+    "quotaExceeded": "You reached your plan limits.",
+    "validationError": "Please check your input and try again.",
+    "providerError": "Failed to generate content. Please try again."
   }
 }

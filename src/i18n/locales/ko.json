@@ -253,6 +253,138 @@
   "platforms": {
     "twitter": "Twitter (X)",
     "linkedin": "LinkedIn",
-    "threads": "Threads"
+    "threads": "Threads",
+    "reddit": "Reddit"
+  },
+  "generate": {
+    "title": "콘텐츠 생성",
+    "description": "아이디어를 매력적인 소셜 미디어 게시물로 변환하세요",
+    "dailyLimit": {
+      "reached": "일일 한도에 도달했습니다 ({{used}}/{{total}}). 무제한 생성을 위해 프로로 업그레이드하세요!",
+      "usage": "오늘 {{used}}/{{total}} 생성 사용"
+    },
+    "upgradeToPro": "프로로 업그레이드",
+    "card": {
+      "title": "소셜 미디어 게시물 만들기",
+      "description": "각 플랫폼에 최적화된 AI 기반 콘텐츠 생성"
+    },
+    "form": {
+      "topic": "주제 또는 제목",
+      "topicPlaceholder": "예: 신제품 출시, 회사 이정표...",
+      "content": "콘텐츠 세부사항 (선택사항)",
+      "contentPlaceholder": "더 많은 맥락, 핵심 포인트 또는 세부사항을 추가하세요...",
+      "tone": "톤 (선택사항)",
+      "tonePlaceholder": "예: 전문적, 캐주얼, 친근한..."
+    },
+    "button": {
+      "generating": "생성 중...",
+      "generate": "게시물 생성"
+    },
+    "validation": {
+      "dailyLimitReached": "일일 한도 도달",
+      "selectPlatform": "최소 한 개 플랫폼을 선택하세요",
+      "addContent": "계속하려면 주제나 콘텐츠를 추가하세요"
+    },
+    "loading": {
+      "title": "콘텐츠 생성 중...",
+      "description": "잠시만 기다려 주세요"
+    },
+    "empty": {
+      "title": "만들 준비가 되셨나요?",
+      "description": "양식을 작성하고 플랫폼을 선택하여 최적화된 소셜 미디어 콘텐츠를 생성하세요"
+    },
+    "toast": {
+      "dailyLimit": "일일 한도에 도달했습니다",
+      "platformLimit": "최대 {{max}}개의 플랫폼을 선택할 수 있습니다",
+      "selectPlatform": "최소 한 개의 플랫폼을 선택해주세요",
+      "provideContent": "주제나 콘텐츠를 입력해주세요",
+      "failed": "콘텐츠 생성에 실패했습니다. 다시 시도해주세요.",
+      "successSingle": "{{count}}개 플랫폼 콘텐츠 생성 완료!",
+      "successMultiple": "{{count}}개 플랫폼 콘텐츠 생성 완료!",
+      "partialSuccess": "{{success}}개 플랫폼 콘텐츠 생성 완료. 실패: {{failed}}",
+      "error": "콘텐츠 생성 중 오류가 발생했습니다"
+    }
+  },
+  "blogToSns": {
+    "title": "블로그를 소셜 미디어로",
+    "description": "블로그 게시물을 최적화된 소셜 미디어 콘텐츠로 변환하세요",
+    "dailyLimit": {
+      "reached": "일일 한도에 도달했습니다 ({{used}}/{{total}}). 무제한 생성을 위해 프로로 업그레이드하세요!",
+      "usage": "오늘 {{used}}/{{total}} 생성 사용"
+    },
+    "upgradeToPro": "프로로 업그레이드",
+    "card": {
+      "title": "블로그 콘텐츠",
+      "description": "블로그 텍스트를 붙여넣어 플랫폼 최적화 게시물을 생성하세요"
+    },
+    "form": {
+      "blogText": "블로그 텍스트",
+      "blogPlaceholder": "블로그 게시물 내용을 여기에 붙여넣으세요...",
+      "lengthExceeded": "콘텐츠가 플랜 제한을 초과했습니다. 더 긴 게시물을 위해 프로로 업그레이드하세요."
+    },
+    "button": {
+      "converting": "변환 중...",
+      "convert": "소셜 게시물로 변환"
+    },
+    "validation": {
+      "dailyLimitReached": "일일 한도 도달",
+      "selectPlatform": "최소 한 개 플랫폼을 선택하세요",
+      "lengthExceeded": "블로그 콘텐츠가 제한을 초과했습니다",
+      "pasteContent": "계속하려면 블로그 콘텐츠를 붙여넣으세요"
+    },
+    "loading": {
+      "title": "블로그 게시물 변환 중...",
+      "description": "잠시만 기다려 주세요"
+    },
+    "empty": {
+      "title": "변환할 준비가 되셨나요?",
+      "description": "블로그 콘텐츠를 붙여넣어 플랫폼 최적화 소셜 미디어 게시물을 생성하세요"
+    },
+    "toast": {
+      "dailyLimit": "일일 한도에 도달했습니다",
+      "platformLimit": "최대 {{max}}개의 플랫폼을 선택할 수 있습니다",
+      "selectPlatform": "최소 한 개의 플랫폼을 선택해주세요",
+      "lengthExceeded": "블로그 콘텐츠가 플랜 제한을 초과했습니다",
+      "minLength": "블로그 콘텐츠는 최소 10자 이상이어야 합니다",
+      "maxLength": "블로그 콘텐츠는 50,000자 미만이어야 합니다",
+      "failed": "콘텐츠 생성에 실패했습니다. 다시 시도해주세요.",
+      "successSingle": "{{count}}개 플랫폼 콘텐츠 생성 완료!",
+      "successMultiple": "{{count}}개 플랫폼 콘텐츠 생성 완료!",
+      "error": "콘텐츠 생성 중 오류가 발생했습니다"
+    }
+  },
+  "appLayout": {
+    "nav": {
+      "generate": "콘텐츠 생성",
+      "blogToSns": "블로그→SNS"
+    },
+    "usage": {
+      "today": "오늘 {{count}}회"
+    },
+    "upgradeToPro": "프로로 업그레이드",
+    "userMenu": {
+      "proPlan": "프로 플랜",
+      "freePlan": "무료 플랜",
+      "settings": "설정",
+      "signOut": "로그아웃"
+    }
+  },
+  "platformSelector": {
+    "label": "플랫폼 선택",
+    "selected": "{{count}}/{{total}}개 선택됨"
+  },
+  "resultCards": {
+    "title": "생성된 콘텐츠",
+    "description": "{{count}}개 플랫폼에 최적화된 콘텐츠",
+    "descriptionPlural": "{{count}}개 플랫폼에 최적화된 콘텐츠",
+    "noContent": "생성된 콘텐츠가 없습니다",
+    "chars": "자",
+    "copyToClipboard": "클립보드에 복사",
+    "copied": "{{platform}} 콘텐츠가 클립보드에 복사되었습니다!"
+  },
+  "common": {
+    "quotaExceeded": "플랜 한도에 도달했습니다.",
+    "validationError": "입력 내용을 확인하고 다시 시도해주세요.",
+    "providerError": "콘텐츠 생성에 실패했습니다. 다시 시도해주세요."
   }
 }

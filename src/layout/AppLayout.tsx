@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
 import { useAppStore } from '@/store/useAppStore';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,8 +14,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { LanguageSwitcher } from '@/components/LanguageSwitcher';
 
 export const AppLayout = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, plan, limits, dailyUsed, loading, loadProfileAndLimits, loadDailyUsage, reset } = useAppStore();
 
@@ -42,8 +45,8 @@ export const AppLayout = () => {
   };
 
   const isPro = plan === 'pro';
-  const usageText = limits.daily_generations 
-    ? `${dailyUsed}/${limits.daily_generations}` 
+  const usageText = limits.daily_generations
+    ? `${dailyUsed}/${limits.daily_generations}`
     : `${dailyUsed}`;
 
   if (loading) {
@@ -67,18 +70,21 @@ export const AppLayout = () => {
 
             <nav className="hidden md:flex items-center gap-4">
               <Link to="/generate">
-                <Button variant="ghost" size="sm">Generate</Button>
+                <Button variant="ghost" size="sm">{t('appLayout.nav.generate')}</Button>
               </Link>
               <Link to="/blog-to-sns">
-                <Button variant="ghost" size="sm">Blog to SNS</Button>
+                <Button variant="ghost" size="sm">{t('appLayout.nav.blogToSns')}</Button>
               </Link>
             </nav>
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             {/* Usage Badge */}
             <Badge variant={isPro ? "default" : "secondary"} className="hidden sm:flex">
-              {usageText} today
+              {t('appLayout.usage.today', { count: usageText })}
             </Badge>
 
             {/* Upgrade Button */}
@@ -86,7 +92,7 @@ export const AppLayout = () => {
               <Button size="sm" variant="default" asChild>
                 <Link to="/settings">
                   <Sparkles className="h-4 w-4 mr-1" />
-                  Upgrade to Pro
+                  {t('appLayout.upgradeToPro')}
                 </Link>
               </Button>
             )}
@@ -103,18 +109,18 @@ export const AppLayout = () => {
                   <div className="flex flex-col gap-1">
                     <span className="text-sm">{user?.email}</span>
                     <Badge variant={isPro ? "default" : "secondary"} className="w-fit">
-                      {isPro ? 'Pro Plan' : 'Free Plan'}
+                      {isPro ? t('appLayout.userMenu.proPlan') : t('appLayout.userMenu.freePlan')}
                     </Badge>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/settings">Settings</Link>
+                  <Link to="/settings">{t('appLayout.userMenu.settings')}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
+                  {t('appLayout.userMenu.signOut')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
@@ -12,25 +13,25 @@ interface ResultCardsProps {
 
 const PLATFORM_CONFIG = {
   linkedin: {
-    name: "LinkedIn",
+    nameKey: "platforms.linkedin",
     icon: "💼",
     color: "border-blue-700",
     bgColor: "bg-blue-700/10",
   },
   twitter: {
-    name: "Twitter (X)",
+    nameKey: "platforms.twitter",
     icon: "🐦",
     color: "border-sky-500",
     bgColor: "bg-sky-500/10",
   },
   threads: {
-    name: "Threads",
+    nameKey: "platforms.threads",
     icon: "🧵",
     color: "border-slate-700",
     bgColor: "bg-slate-700/10",
   },
   reddit: {
-    name: "Reddit",
+    nameKey: "platforms.reddit",
     icon: "👽",
     color: "border-orange-500",
     bgColor: "bg-orange-500/10",
@@ -38,9 +39,11 @@ const PLATFORM_CONFIG = {
 } as const;
 
 export const ResultCards = ({ content }: ResultCardsProps) => {
-  const copyToClipboard = (text: string, platform: string) => {
+  const { t } = useTranslation();
+
+  const copyToClipboard = (text: string, platformName: string) => {
     navigator.clipboard.writeText(text);
-    toast.success(`Copied ${platform} content to clipboard!`);
+    toast.success(t('resultCards.copied', { platform: platformName }));
   };
 
   const platformEntries = Object.entries(content);
@@ -48,7 +51,7 @@ export const ResultCards = ({ content }: ResultCardsProps) => {
   if (platformEntries.length === 0) {
     return (
       <div className="text-center p-8 text-muted-foreground">
-        No content generated
+        {t('resultCards.noContent')}
       </div>
     );
   }
@@ -56,20 +59,27 @@ export const ResultCards = ({ content }: ResultCardsProps) => {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Your Generated Content</h2>
+        <h2 className="text-2xl font-bold mb-2">{t('resultCards.title')}</h2>
         <p className="text-muted-foreground">
-          Content optimized for {platformEntries.length} platform{platformEntries.length > 1 ? 's' : ''}
+          {platformEntries.length > 1
+            ? t('resultCards.descriptionPlural', { count: platformEntries.length })
+            : t('resultCards.description', { count: platformEntries.length })
+          }
         </p>
       </div>
 
       <div className="grid gap-4">
         {platformEntries.map(([platform, text]) => {
           const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG] || {
-            name: platform,
+            nameKey: platform,
             icon: "📝",
             color: "border-primary",
             bgColor: "bg-primary/10",
           };
+
+          const platformName = config.nameKey.startsWith('platforms.')
+            ? t(config.nameKey)
+            : config.nameKey;
 
           return (
             <Card
@@ -80,10 +90,10 @@ export const ResultCards = ({ content }: ResultCardsProps) => {
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-3">
                     <span className="text-2xl">{config.icon}</span>
-                    <span className="font-bold">{config.name}</span>
+                    <span className="font-bold">{platformName}</span>
                   </span>
                   <Badge variant="outline" className="font-semibold">
-                    {text.length} chars
+                    {text.length} {t('resultCards.chars')}
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -97,10 +107,10 @@ export const ResultCards = ({ content }: ResultCardsProps) => {
                   variant="outline"
                   size="sm"
                   className="w-full"
-                  onClick={() => copyToClipboard(text, config.name)}
+                  onClick={() => copyToClipboard(text, platformName)}
                 >
                   <Copy className="w-4 h-4 mr-2" />
-                  Copy to Clipboard
+                  {t('resultCards.copyToClipboard')}
                 </Button>
               </CardContent>
             </Card>

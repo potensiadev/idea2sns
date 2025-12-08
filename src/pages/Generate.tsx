@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import { GeneratedContent, ResultCards } from '@/components/ResultCards';
 import { Link, useNavigate } from 'react-router-dom';
 
 export default function Generate() {
+  const { t } = useTranslation();
   const {
     maxPlatforms,
     dailyUsed,
@@ -37,7 +39,7 @@ export default function Generate() {
 
   const handlePlatformChange = (newPlatforms: string[]) => {
     if (maxPlatforms !== null && newPlatforms.length > maxPlatforms) {
-      toast.error(`You can select up to ${maxPlatforms} platform${maxPlatforms === 1 ? '' : 's'}`);
+      toast.error(t('generate.toast.platformLimit', { max: maxPlatforms }));
       return;
     }
     setPlatforms(newPlatforms);
@@ -45,7 +47,7 @@ export default function Generate() {
 
   const handleFunctionError = (code?: string, message?: string) => {
     if (code === 'QUOTA_EXCEEDED') {
-      toast.error(message || 'You reached your plan limits.');
+      toast.error(message || t('common.quotaExceeded'));
       return true;
     }
     if (code === 'AUTH_REQUIRED') {
@@ -53,11 +55,11 @@ export default function Generate() {
       return true;
     }
     if (code === 'VALIDATION_ERROR') {
-      toast.error(message || 'Please check your input and try again.');
+      toast.error(message || t('common.validationError'));
       return true;
     }
     if (code === 'PROVIDER_ERROR' || code === 'INTERNAL_ERROR') {
-      toast.error(message || 'Failed to generate content. Please try again.');
+      toast.error(message || t('common.providerError'));
       return true;
     }
     return false;
@@ -90,22 +92,22 @@ export default function Generate() {
     e.preventDefault();
 
     if (isAtDailyLimit) {
-      toast.error('Daily limit reached');
+      toast.error(t('generate.toast.dailyLimit'));
       return;
     }
 
     if (platformLimitExceeded) {
-      toast.error(`You can select up to ${maxPlatforms} platforms`);
+      toast.error(t('generate.toast.platformLimit', { max: maxPlatforms }));
       return;
     }
 
     if (platforms.length === 0) {
-      toast.error('Please select at least one platform');
+      toast.error(t('generate.toast.selectPlatform'));
       return;
     }
 
     if (!topic && !content) {
-      toast.error('Please provide a topic or content');
+      toast.error(t('generate.toast.provideContent'));
       return;
     }
 
@@ -130,7 +132,7 @@ export default function Generate() {
 
       const { content: posts, failedPlatforms } = extractGeneratedContent(data, platforms);
       if (!posts) {
-        toast.error('Failed to generate content. Please try again.');
+        toast.error(t('generate.toast.failed'));
         return;
       }
 
@@ -138,15 +140,17 @@ export default function Generate() {
 
       const successCount = platforms.length - failedPlatforms.length;
       if (failedPlatforms.length > 0) {
-        toast.warning(`Generated content for ${successCount} platform${successCount > 1 ? 's' : ''}. Failed: ${failedPlatforms.join(', ')}`);
+        toast.warning(t('generate.toast.partialSuccess', { success: successCount, failed: failedPlatforms.join(', ') }));
       } else {
-        toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
+        toast.success(platforms.length > 1
+          ? t('generate.toast.successMultiple', { count: platforms.length })
+          : t('generate.toast.successSingle', { count: platforms.length })
+        );
       }
       await loadDailyUsage();
     } catch (err) {
       console.error('Generation error:', err);
-      const message = err instanceof Error ? err.message : 'An error occurred while generating content';
-      toast.error(message);
+      toast.error(t('generate.toast.error'));
     } finally {
       setIsLoading(false);
     }
@@ -156,9 +160,9 @@ export default function Generate() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Generate Content</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('generate.title')}</h1>
           <p className="text-muted-foreground">
-            Transform your ideas into engaging social media posts
+            {t('generate.description')}
           </p>
         </div>
 
@@ -168,13 +172,13 @@ export default function Generate() {
             <AlertDescription className="flex items-center justify-between">
               <span>
                 {isAtDailyLimit
-                  ? `Daily limit reached (${dailyUsed}/${limits.daily_generations}). Upgrade to Pro for unlimited generations!`
-                  : `${dailyUsed}/${limits.daily_generations} generations used today`
+                  ? t('generate.dailyLimit.reached', { used: dailyUsed, total: limits.daily_generations })
+                  : t('generate.dailyLimit.usage', { used: dailyUsed, total: limits.daily_generations })
                 }
               </span>
               {isAtDailyLimit && (
                 <Button size="sm" asChild>
-                  <Link to="/settings">Upgrade to Pro</Link>
+                  <Link to="/settings">{t('generate.upgradeToPro')}</Link>
                 </Button>
               )}
             </AlertDescription>
@@ -184,18 +188,18 @@ export default function Generate() {
         <div className="grid lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Create Social Media Post</CardTitle>
+              <CardTitle>{t('generate.card.title')}</CardTitle>
               <CardDescription>
-                Generate AI-powered content optimized for each platform
+                {t('generate.card.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="topic">Topic or Title</Label>
+                  <Label htmlFor="topic">{t('generate.form.topic')}</Label>
                   <Input
                     id="topic"
-                    placeholder="e.g., New product launch, Company milestone..."
+                    placeholder={t('generate.form.topicPlaceholder')}
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}
                     disabled={isLoading}
@@ -203,10 +207,10 @@ export default function Generate() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="content">Content Details (Optional)</Label>
+                  <Label htmlFor="content">{t('generate.form.content')}</Label>
                   <Textarea
                     id="content"
-                    placeholder="Add more context, key points, or details..."
+                    placeholder={t('generate.form.contentPlaceholder')}
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     disabled={isLoading}
@@ -216,10 +220,10 @@ export default function Generate() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="tone">Tone (Optional)</Label>
+                  <Label htmlFor="tone">{t('generate.form.tone')}</Label>
                   <Input
                     id="tone"
-                    placeholder="e.g., Professional, Casual, Friendly..."
+                    placeholder={t('generate.form.tonePlaceholder')}
                     value={tone}
                     onChange={(e) => setTone(e.target.value)}
                     disabled={isLoading}
@@ -241,12 +245,12 @@ export default function Generate() {
                   {isLoading ? (
                     <>
                       <LoadingSpinner size="sm" className="mr-2" />
-                      Generating...
+                      {t('generate.button.generating')}
                     </>
                   ) : (
                     <>
                       <Sparkles className="mr-2 h-4 w-4" />
-                      Generate Posts
+                      {t('generate.button.generate')}
                     </>
                   )}
                 </Button>
@@ -254,10 +258,10 @@ export default function Generate() {
                 {!canGenerate && !isLoading && (
                   <p className="text-sm text-muted-foreground text-center">
                     {isAtDailyLimit
-                      ? 'Daily limit reached'
+                      ? t('generate.validation.dailyLimitReached')
                       : platforms.length === 0
-                      ? 'Select at least one platform'
-                      : 'Add a topic or content to continue'}
+                      ? t('generate.validation.selectPlatform')
+                      : t('generate.validation.addContent')}
                   </p>
                 )}
               </form>
@@ -270,8 +274,8 @@ export default function Generate() {
                 <div className="text-center space-y-4">
                   <LoadingSpinner size="lg" />
                   <div>
-                    <p className="font-medium">Generating your content...</p>
-                    <p className="text-sm text-muted-foreground">This may take a few moments</p>
+                    <p className="font-medium">{t('generate.loading.title')}</p>
+                    <p className="text-sm text-muted-foreground">{t('generate.loading.description')}</p>
                   </div>
                 </div>
               </Card>
@@ -284,9 +288,9 @@ export default function Generate() {
                     <Sparkles className="h-8 w-8 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium text-lg mb-2">Ready to create?</p>
+                    <p className="font-medium text-lg mb-2">{t('generate.empty.title')}</p>
                     <p className="text-sm text-muted-foreground max-w-sm">
-                      Fill in the form and select your platforms to generate optimized social media content
+                      {t('generate.empty.description')}
                     </p>
                   </div>
                 </div>

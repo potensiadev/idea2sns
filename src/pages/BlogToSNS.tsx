@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,13 +13,9 @@ import { Sparkles, AlertCircle, FileText } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { GeneratedContent, ResultCards } from '@/components/ResultCards';
 import { Link, useNavigate } from 'react-router-dom';
-import { z } from 'zod';
-
-const blogContentSchema = z.string()
-  .min(10, 'Blog content must be at least 10 characters')
-  .max(50000, 'Blog content must be less than 50,000 characters');
 
 export default function BlogToSNS() {
+  const { t } = useTranslation();
   const {
     maxPlatforms,
     maxBlogLength,
@@ -41,7 +38,7 @@ export default function BlogToSNS() {
 
   const handlePlatformChange = (newPlatforms: string[]) => {
     if (maxPlatforms !== null && newPlatforms.length > maxPlatforms) {
-      toast.error(`You can select up to ${maxPlatforms} platform${maxPlatforms === 1 ? '' : 's'}`);
+      toast.error(t('blogToSns.toast.platformLimit', { max: maxPlatforms }));
       return;
     }
     setPlatforms(newPlatforms);
@@ -49,7 +46,7 @@ export default function BlogToSNS() {
 
   const handleFunctionError = (code?: string, message?: string) => {
     if (code === 'QUOTA_EXCEEDED') {
-      toast.error(message || 'You reached your plan limits.');
+      toast.error(message || t('common.quotaExceeded'));
       return true;
     }
     if (code === 'AUTH_REQUIRED') {
@@ -57,11 +54,11 @@ export default function BlogToSNS() {
       return true;
     }
     if (code === 'VALIDATION_ERROR') {
-      toast.error(message || 'Please check your input and try again.');
+      toast.error(message || t('common.validationError'));
       return true;
     }
     if (code === 'PROVIDER_ERROR' || code === 'INTERNAL_ERROR') {
-      toast.error(message || 'Failed to generate content. Please try again.');
+      toast.error(message || t('common.providerError'));
       return true;
     }
     return false;
@@ -86,28 +83,32 @@ export default function BlogToSNS() {
     e.preventDefault();
 
     if (isAtDailyLimit) {
-      toast.error('Daily limit reached');
+      toast.error(t('blogToSns.toast.dailyLimit'));
       return;
     }
 
     if (platformLimitExceeded) {
-      toast.error(`You can select up to ${maxPlatforms} platforms`);
+      toast.error(t('blogToSns.toast.platformLimit', { max: maxPlatforms }));
       return;
     }
 
     if (platforms.length === 0) {
-      toast.error('Please select at least one platform');
+      toast.error(t('blogToSns.toast.selectPlatform'));
       return;
     }
 
-    const contentValidation = blogContentSchema.safeParse(blogContent);
-    if (!contentValidation.success) {
-      toast.error(contentValidation.error.errors[0].message);
+    if (blogContent.trim().length < 10) {
+      toast.error(t('blogToSns.toast.minLength'));
+      return;
+    }
+
+    if (blogContent.length > 50000) {
+      toast.error(t('blogToSns.toast.maxLength'));
       return;
     }
 
     if (blogLengthExceeded) {
-      toast.error('Blog content exceeds your plan limit');
+      toast.error(t('blogToSns.toast.lengthExceeded'));
       return;
     }
 
@@ -130,17 +131,19 @@ export default function BlogToSNS() {
 
       const posts = extractGeneratedContent(data);
       if (!posts) {
-        toast.error('Failed to generate content. Please try again.');
+        toast.error(t('blogToSns.toast.failed'));
         return;
       }
 
       setResults(posts);
-      toast.success(`Generated content for ${platforms.length} platform${platforms.length > 1 ? 's' : ''}!`);
+      toast.success(platforms.length > 1
+        ? t('blogToSns.toast.successMultiple', { count: platforms.length })
+        : t('blogToSns.toast.successSingle', { count: platforms.length })
+      );
       await loadDailyUsage();
     } catch (err) {
       console.error('Generation error:', err);
-      const message = err instanceof Error ? err.message : 'An error occurred while generating content';
-      toast.error(message);
+      toast.error(t('blogToSns.toast.error'));
     } finally {
       setIsLoading(false);
     }
@@ -150,9 +153,9 @@ export default function BlogToSNS() {
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Blog to Social Media</h1>
+          <h1 className="text-3xl font-bold mb-2">{t('blogToSns.title')}</h1>
           <p className="text-muted-foreground">
-            Convert your blog posts into optimized social media content
+            {t('blogToSns.description')}
           </p>
         </div>
 
@@ -162,13 +165,13 @@ export default function BlogToSNS() {
             <AlertDescription className="flex items-center justify-between">
               <span>
                 {isAtDailyLimit
-                  ? `Daily limit reached (${dailyUsed}/${limits.daily_generations}). Upgrade to Pro for unlimited generations!`
-                  : `${dailyUsed}/${limits.daily_generations} generations used today`
+                  ? t('blogToSns.dailyLimit.reached', { used: dailyUsed, total: limits.daily_generations })
+                  : t('blogToSns.dailyLimit.usage', { used: dailyUsed, total: limits.daily_generations })
                 }
               </span>
               {isAtDailyLimit && (
                 <Button size="sm" asChild>
-                  <Link to="/settings">Upgrade to Pro</Link>
+                  <Link to="/settings">{t('blogToSns.upgradeToPro')}</Link>
                 </Button>
               )}
             </AlertDescription>
@@ -178,16 +181,16 @@ export default function BlogToSNS() {
         <div className="grid lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Blog Content</CardTitle>
+              <CardTitle>{t('blogToSns.card.title')}</CardTitle>
               <CardDescription>
-                Paste your blog text to generate platform-optimized posts
+                {t('blogToSns.card.description')}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="blog-content">Blog Text</Label>
+                    <Label htmlFor="blog-content">{t('blogToSns.form.blogText')}</Label>
                     <span className={`text-xs ${
                       blogLengthExceeded
                         ? 'text-destructive font-medium'
@@ -198,7 +201,7 @@ export default function BlogToSNS() {
                   </div>
                   <Textarea
                     id="blog-content"
-                    placeholder="Paste your blog post content here..."
+                    placeholder={t('blogToSns.form.blogPlaceholder')}
                     value={blogContent}
                     onChange={(e) => setBlogContent(e.target.value)}
                     disabled={isLoading}
@@ -207,7 +210,7 @@ export default function BlogToSNS() {
                   />
                   {blogLengthExceeded && (
                     <p className="text-xs text-destructive">
-                      Content exceeds your plan limit. Upgrade to Pro for longer posts.
+                      {t('blogToSns.form.lengthExceeded')}
                     </p>
                   )}
                 </div>
@@ -227,12 +230,12 @@ export default function BlogToSNS() {
                   {isLoading ? (
                     <>
                       <LoadingSpinner size="sm" className="mr-2" />
-                      Converting...
+                      {t('blogToSns.button.converting')}
                     </>
                   ) : (
                     <>
                       <Sparkles className="mr-2 h-4 w-4" />
-                      Convert to Social Posts
+                      {t('blogToSns.button.convert')}
                     </>
                   )}
                 </Button>
@@ -240,12 +243,12 @@ export default function BlogToSNS() {
                 {!canGenerate && !isLoading && (
                   <p className="text-sm text-muted-foreground text-center">
                     {isAtDailyLimit
-                      ? 'Daily limit reached'
+                      ? t('blogToSns.validation.dailyLimitReached')
                       : platforms.length === 0
-                      ? 'Select at least one platform'
+                      ? t('blogToSns.validation.selectPlatform')
                       : blogLengthExceeded
-                      ? 'Blog content exceeds limit'
-                      : 'Paste blog content to continue'}
+                      ? t('blogToSns.validation.lengthExceeded')
+                      : t('blogToSns.validation.pasteContent')}
                   </p>
                 )}
               </form>
@@ -258,8 +261,8 @@ export default function BlogToSNS() {
                 <div className="text-center space-y-4">
                   <LoadingSpinner size="lg" />
                   <div>
-                    <p className="font-medium">Converting your blog post...</p>
-                    <p className="text-sm text-muted-foreground">This may take a few moments</p>
+                    <p className="font-medium">{t('blogToSns.loading.title')}</p>
+                    <p className="text-sm text-muted-foreground">{t('blogToSns.loading.description')}</p>
                   </div>
                 </div>
               </Card>
@@ -272,9 +275,9 @@ export default function BlogToSNS() {
                     <FileText className="h-8 w-8 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium text-lg mb-2">Ready to convert?</p>
+                    <p className="font-medium text-lg mb-2">{t('blogToSns.empty.title')}</p>
                     <p className="text-sm text-muted-foreground max-w-sm">
-                      Paste your blog content to generate platform-optimized social media posts
+                      {t('blogToSns.empty.description')}
                     </p>
                   </div>
                 </div>

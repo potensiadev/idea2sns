@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
@@ -25,13 +26,15 @@ interface PlatformSelectorProps {
 }
 
 const PLATFORMS = [
-  { id: 'twitter', name: 'Twitter (X)', icon: Twitter },
-  { id: 'linkedin', name: 'LinkedIn', icon: Linkedin },
-  { id: 'threads', name: 'Threads', icon: MessageCircle },
-  { id: 'reddit', name: 'Reddit', icon: RedditIcon },
+  { id: 'twitter', nameKey: 'platforms.twitter', icon: Twitter },
+  { id: 'linkedin', nameKey: 'platforms.linkedin', icon: Linkedin },
+  { id: 'threads', nameKey: 'platforms.threads', icon: MessageCircle },
+  { id: 'reddit', nameKey: 'platforms.reddit', icon: RedditIcon },
 ];
 
 export const PlatformSelector = ({ selected, onChange, maxPlatforms }: PlatformSelectorProps) => {
+  const { t } = useTranslation();
+
   const togglePlatform = (platformId: string) => {
     if (selected.includes(platformId)) {
       onChange(selected.filter(p => p !== platformId));
@@ -46,9 +49,9 @@ export const PlatformSelector = ({ selected, onChange, maxPlatforms }: PlatformS
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-sm font-medium">Select Platforms</label>
+        <label className="text-sm font-medium">{t('platformSelector.label')}</label>
         <span className="text-xs text-muted-foreground">
-          {selected.length}/{PLATFORMS.length} selected
+          {t('platformSelector.selected', { count: selected.length, total: PLATFORMS.length })}
         </span>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -70,7 +73,7 @@ export const PlatformSelector = ({ selected, onChange, maxPlatforms }: PlatformS
               disabled={isDisabled}
             >
               <Icon className="h-5 w-5" />
-              <span className="text-xs">{platform.name}</span>
+              <span className="text-xs">{t(platform.nameKey)}</span>
             </Button>
           );
         })}
