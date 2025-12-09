@@ -1,80 +1,87 @@
 {
   "hero": {
-    "badge": "AI-Powered Multi-Platform Content",
-    "title1": "Create Platform-Ready Posts",
-    "title2": "in 10 Seconds",
-    "description": "Stop rewriting content for every platform. Enter your idea → instantly get optimized posts for X, LinkedIn, Reddit, and Threads.",
-    "tagline": "Save 90% of your time. Keep your brand voice. Grow faster.",
+    "title1": "Why Copy-Paste Doesn’t Work,",
+    "title2": "And How to Fix It in 10 Seconds",
+    "description": "Each platform requires a different writing style. Enter your idea once → instantly get posts rewritten for X, LinkedIn, Reddit, and Threads.",
+    "tagline": "Stop copy-pasting. Start optimizing. Save 90% of your time.",
     "login": "Login",
     "signup": "Sign Up"
   },
+
   "landing": {
     "nav": {
       "login": "Login",
       "getStarted": "Get Started"
     },
+
     "hero": {
       "title": {
-        "part1": "Create Platform-Ready Posts",
-        "part2": "in 10 Seconds — From Just One Input"
+        "part1": "Why do your posts get no traction?",
+        "part2": "Because every platform needs a different writing style."
       },
-      "subtitle": "Stop rewriting content for every platform. Enter your idea → instantly get optimized posts for X, LinkedIn, Reddit, and Threads.",
-      "tagline": "Save 90% of your time. Keep your brand voice. Grow faster.",
+      "subtitle": "Most business owners copy-paste the same post everywhere — but X, LinkedIn, Reddit, and Threads all reward different tones and structures. idea2sns rewrites your idea automatically for each platform.",
+      "tagline": "Save 90% of your time · Keep your brand voice · Get higher engagement",
       "cta": "Generate My First Posts",
-      "tryDemo": "View Example Posts"
+      "tryDemo": "See Example Posts"
     },
+
     "stats": {
       "platforms": "Platforms Optimized",
       "timeSaved": "Time Saved",
       "users": "Users"
     },
+
     "features": {
       "title": "Why idea2sns?",
-      "subtitle": "The perfect solution for content marketers and creators",
+      "subtitle": "It understands the rules of every platform — so you don’t have to.",
       "multiPlatform": {
         "title": "4 Platforms at Once",
-        "description": "Create platform-specific posts for X, LinkedIn, Reddit, and Threads instantly — without rewriting anything."
+        "description": "Enter your idea once → get platform-specific posts for X, LinkedIn, Reddit, and Threads. No rewriting. No formatting hassles."
       },
       "optimized": {
-        "title": "Built-In Platform Optimization",
-        "description": "Each post is adjusted based on platform rules, tone, length, and engagement best practices."
+        "title": "True Platform Optimization",
+        "description": "Each post follows platform-specific tone, structure, length, and engagement best practices — automatically."
       },
       "timeSaving": {
-        "title": "Save 5 Hours Every Week",
-        "description": "Weekly content time reduced from 5 hours → 10 minutes with instant variations included."
+        "title": "Save 5+ Hours Every Week",
+        "description": "Stop rewriting. Stop guessing tones. idea2sns cuts weekly content time from hours to minutes."
       }
     },
+
     "benefits": {
-      "title": "Perfect for You",
-      "subtitle": "Solve all your content creation challenges",
+      "title": "Perfect for Busy Creators & Business Owners",
+      "subtitle": "Because you have a business to run — not four platforms to rewrite for",
       "noRewriting": "One input → 4 platform-ready posts",
-      "platformOptimized": "Brand voice automatically applied",
-      "aiPowered": "Higher engagement with optimized formats",
+      "platformOptimized": "Your brand voice applied automatically",
+      "aiPowered": "Higher engagement through optimized formats",
       "instantGeneration": "Instant variations included",
-      "professionalQuality": "Consistent Brand Voice",
-      "multilingual": "Multi-language support for global reach",
+      "professionalQuality": "Consistent brand voice across all channels",
+      "multilingual": "Multi-language support for global audiences",
       "cta": "Get Started Now"
     },
+
     "showcase": {
-      "engagement": "Engagement Increase",
-      "timeSaved": "Time Saved per Week",
+      "engagement": "Engagement Lift",
+      "timeSaved": "Time Saved Weekly",
       "hours": "hours/week",
       "quality": "Content Quality",
       "professional": "Professional"
     },
+
     "example": {
-      "title": "See It In Action",
-      "subtitle": "One input, four platform-ready posts",
+      "title": "See the Difference",
+      "subtitle": "One idea rewritten four different ways — exactly how each platform prefers it",
       "inputLabel": "Your Input",
       "inputExample": "How to promote your startup without spending money",
       "outputs": {
-        "twitter": "Short, punchy, 280-character limit post optimized for engagement",
-        "linkedin": "Professional, structured, concise insight-driven caption",
+        "twitter": "Short, punchy, 280-character engagement-optimized post",
+        "linkedin": "Professional, structured, insight-driven caption",
         "reddit": "Story-driven, helpful, non-promotional post",
-        "threads": "Conversational, discussion-friendly post"
+        "threads": "Casual, conversational, discussion-friendly post"
       },
       "cta": "Generate Your Own Posts"
     },
+
     "beforeAfter": {
       "title": "Before vs After idea2sns",
       "before": {
@@ -82,7 +89,7 @@
         "items": [
           "Rewriting the same content 4 times",
           "Guessing the right tone for each platform",
-          "Inconsistent brand style",
+          "Inconsistent brand style and messaging",
           "Hours wasted every week",
           "Burnout from daily posting"
         ]
@@ -90,55 +97,58 @@
       "after": {
         "title": "After",
         "items": [
-          "One input → 4 platform-ready posts",
-          "Brand voice automatically applied",
-          "Higher engagement with optimized formats",
-          "Weekly content time reduced from 5 hours → 10 minutes",
-          "Consistent daily posting"
+          "One input → 4 optimized posts",
+          "Brand voice automatically preserved",
+          "Higher engagement from platform-specific formatting",
+          "5 hours of weekly content time reduced to 10 minutes",
+          "Effortless, consistent daily posting"
         ]
       }
     },
+
     "howItWorks": {
       "title": "How It Works",
-      "subtitle": "Three simple steps to platform-ready content",
+      "subtitle": "The easiest way to publish platform-ready content",
       "steps": [
         {
           "title": "Enter Your Idea",
-          "description": "Type your topic or paste your content"
+          "description": "Type a topic or paste your content — any format works."
         },
         {
           "title": "Select Platforms",
-          "description": "Choose X, LinkedIn, Reddit, Threads"
+          "description": "Choose X, LinkedIn, Reddit, and Threads."
         },
         {
           "title": "Get Ready-to-Post Content",
-          "description": "Brand voice + variations included"
+          "description": "Optimized writing styles + brand voice + variations included."
         }
       ],
       "cta": "Try a Free Generation"
     },
+
     "testimonials": {
       "title": "What Users Say",
-      "subtitle": "Join 10,000+ creators saving time every day",
+      "subtitle": "Join 10,000+ creators and business owners saving hours every week",
       "items": [
         {
-          "quote": "This cut my weekly content time from 6 hours to under 15 minutes.",
+          "quote": "idea2sns cut my weekly content time from 6 hours to under 15 minutes.",
           "author": "Marketing Manager"
         },
         {
-          "quote": "Finally an AI tool that understands platform differences.",
+          "quote": "Finally — an AI tool that actually understands platform differences.",
           "author": "Content Creator"
         },
         {
-          "quote": "Brand Voice is the real game-changer. Tonality is spot on.",
+          "quote": "Brand Voice is the real game-changer. My posts finally sound like *me*.",
           "author": "Startup Founder"
         }
       ],
       "stats": "10,000+ users | 90% time saved | 4 platforms optimized"
     },
+
     "pricing": {
       "title": "Simple Pricing",
-      "subtitle": "Start free, upgrade when you need more",
+      "subtitle": "Start free. Upgrade only if you need more.",
       "free": {
         "name": "Free",
         "price": "$0",
@@ -155,33 +165,36 @@
         "price": "$9/mo",
         "features": [
           "Unlimited platforms",
-          "Brand Voice",
-          "Variations",
+          "Brand Voice engine",
+          "Variations (short, long, hook)",
           "Blog → SNS repurposing",
-          "Full history",
-          "Priority generation"
+          "Full history access",
+          "Priority generation speed"
         ],
         "cta": "Upgrade to Pro"
       }
     },
+
     "cta": {
       "title": "Ready to Create Better Social Content — in Minutes?",
-      "subtitle": "Start for free and see how fast content creation becomes.",
+      "subtitle": "Start for free and instantly see how much faster content creation becomes.",
       "button": "Generate for Free",
-      "secondary": "View Example Outputs"
+      "secondary": "See Example Outputs"
     },
+
     "footer": {
       "rights": "All rights reserved."
     }
   },
+
   "contentForm": {
     "topic": "Content Topic",
-    "topicPlaceholder": "e.g., Launch of our new AI product",
+    "topicPlaceholder": "e.g., Launching our new AI product",
     "mainContent": "Main Content",
-    "contentPlaceholder": "Describe the key points you want to share...",
+    "contentPlaceholder": "Add key points, background, or details…",
     "tone": "Tone & Style",
     "selectPlatforms": "Select Platforms",
-    "generating": "Generating Amazing Content...",
+    "generating": "Generating your optimized posts...",
     "generate": "Generate Posts",
     "tones": {
       "professional": "Professional",
@@ -191,29 +204,32 @@
       "educational": "Educational"
     }
   },
+
   "blogForm": {
-    "title": "Transform Blog Content into Social Media Posts",
-    "description": "Paste your blog post and AI will automatically generate optimized posts for each social media platform",
+    "title": "Turn Your Blog Into Social Media Posts",
+    "description": "Paste your blog content — AI will rewrite it into platform-ready posts automatically.",
     "blogContent": "Full Blog Content",
-    "blogPlaceholder": "Paste your entire blog content here. AI will analyze the key points and create posts tailored to each platform...",
+    "blogPlaceholder": "Paste your blog here. AI will summarize key points and adapt them for each platform...",
     "characters": "chars",
-    "overLimit": "⚠️ Content is too long. Please reduce to {max} characters or less for AI processing.",
-    "tip": "💡 Tip: AI automatically summarizes long blogs and adapts them for each platform",
+    "overLimit": "⚠️ Content is too long. Please reduce to {max} characters.",
+    "tip": "💡 AI automatically extracts the key message and adapts tone for each platform.",
     "keyMessage": "Emphasize Key Message (Optional)",
-    "keyMessagePlaceholder": "e.g., 30% performance improvement and enhanced developer experience",
-    "keyMessageTip": "Enter any key points you want to emphasize. AI will prioritize these in the generated posts.",
-    "selectPlatforms": "Select Platforms to Post",
-    "generating": "AI is analyzing blog and generating posts...",
-    "generate": "Analyze Blog & Generate Posts"
+    "keyMessagePlaceholder": "e.g., 30% performance improvement, enhanced user experience",
+    "keyMessageTip": "If there’s something you want highlighted, add it here.",
+    "selectPlatforms": "Select Platforms",
+    "generating": "Analyzing your blog and generating posts...",
+    "generate": "Convert to Social Posts"
   },
+
   "results": {
-    "title": "Generated Posts",
-    "description": "Posts optimized for each platform have been generated",
+    "title": "Your Generated Posts",
+    "description": "Platform-optimized posts are ready to use",
     "copy": "Copy",
     "copied": "{platform} post copied to clipboard!",
-    "error": "Unable to display posts",
+    "error": "Unable to display content",
     "chars": "chars"
   },
+
   "auth": {
     "welcome": "Welcome",
     "description": "Sign in to your account or create a new one",
@@ -228,48 +244,51 @@
     "namePlaceholder": "John Doe",
     "signingIn": "Signing in...",
     "signingUp": "Signing up...",
-    "emailNotConfirmed": "Haven't confirmed your email?",
-    "resendEmail": "Resend Confirmation Email",
+    "emailNotConfirmed": "Haven’t verified your email?",
+    "resendEmail": "Resend verification email",
     "errors": {
       "invalidEmail": "Please enter a valid email address",
       "passwordMin": "Password must be at least 6 characters",
-      "alreadyRegistered": "This email is already registered. Please sign in.",
-      "invalidCredentials": "Email or password is incorrect. Have you completed email verification after signing up?",
-      "emailNotConfirmedError": "Email verification required. Please check your inbox."
+      "alreadyRegistered": "This email is already registered. Please log in.",
+      "invalidCredentials": "Incorrect email or password. Did you verify your email after signing up?",
+      "emailNotConfirmedError": "Email verification required. Check your inbox."
     },
     "success": {
-      "signedUp": "Sign up complete! Please check your email to verify your account.",
+      "signedUp": "Sign-up complete! Check your inbox to verify your account.",
       "signedIn": "Successfully signed in!",
-      "emailResent": "Confirmation email has been resent. Please check your inbox."
+      "emailResent": "Verification email sent again. Please check your inbox."
     }
   },
+
   "tabs": {
     "simple": "Simple Input",
     "blog": "Blog Transform"
   },
+
   "platforms": {
     "twitter": "Twitter (X)",
     "linkedin": "LinkedIn",
     "threads": "Threads",
     "reddit": "Reddit"
   },
+
   "generate": {
     "title": "Generate Content",
-    "description": "Transform your ideas into engaging social media posts",
+    "description": "Turn your ideas into engaging, platform-ready posts",
     "dailyLimit": {
       "reached": "Daily limit reached ({{used}}/{{total}}). Upgrade to Pro for unlimited generations!",
       "usage": "{{used}}/{{total}} generations used today"
     },
     "upgradeToPro": "Upgrade to Pro",
     "card": {
-      "title": "Create Social Media Post",
-      "description": "Generate AI-powered content optimized for each platform"
+      "title": "Create Social Media Posts",
+      "description": "Generate AI-powered content optimized for every platform"
     },
     "form": {
       "topic": "Topic or Title",
-      "topicPlaceholder": "e.g., New product launch, Company milestone...",
+      "topicPlaceholder": "e.g., New product launch, company milestone...",
       "content": "Content Details (Optional)",
-      "contentPlaceholder": "Add more context, key points, or details...",
+      "contentPlaceholder": "Add more context, key messages, or background…",
       "tone": "Tone (Optional)",
       "tonePlaceholder": "e.g., Professional, Casual, Friendly..."
     },
@@ -280,31 +299,32 @@
     "validation": {
       "dailyLimitReached": "Daily limit reached",
       "selectPlatform": "Select at least one platform",
-      "addContent": "Add a topic or content to continue"
+      "addContent": "Add a topic or description to continue"
     },
     "loading": {
-      "title": "Generating your content...",
-      "description": "This may take a few moments"
+      "title": "Creating your optimized content...",
+      "description": "This may take a moment"
     },
     "empty": {
       "title": "Ready to create?",
-      "description": "Fill in the form and select your platforms to generate optimized social media content"
+      "description": "Fill in the form and select your platforms to generate optimized content"
     },
     "toast": {
       "dailyLimit": "Daily limit reached",
       "platformLimit": "You can select up to {{max}} platforms",
-      "selectPlatform": "Please select at least one platform",
+      "selectPlatform": "Select at least one platform",
       "provideContent": "Please provide a topic or content",
-      "failed": "Failed to generate content. Please try again.",
+      "failed": "Generation failed. Please try again.",
       "successSingle": "Generated content for {{count}} platform!",
       "successMultiple": "Generated content for {{count}} platforms!",
-      "partialSuccess": "Generated content for {{success}} platform(s). Failed: {{failed}}",
-      "error": "An error occurred while generating content"
+      "partialSuccess": "{{success}} succeeded, {{failed}} failed",
+      "error": "Error during content generation"
     }
   },
+
   "blogToSns": {
     "title": "Blog to Social Media",
-    "description": "Convert your blog posts into optimized social media content",
+    "description": "Repurpose your blog into platform-optimized social media posts",
     "dailyLimit": {
       "reached": "Daily limit reached ({{used}}/{{total}}). Upgrade to Pro for unlimited generations!",
       "usage": "{{used}}/{{total}} generations used today"
@@ -312,12 +332,12 @@
     "upgradeToPro": "Upgrade to Pro",
     "card": {
       "title": "Blog Content",
-      "description": "Paste your blog text to generate platform-optimized posts"
+      "description": "Paste your blog to generate social-ready posts"
     },
     "form": {
       "blogText": "Blog Text",
-      "blogPlaceholder": "Paste your blog post content here...",
-      "lengthExceeded": "Content exceeds your plan limit. Upgrade to Pro for longer posts."
+      "blogPlaceholder": "Paste your blog content here...",
+      "lengthExceeded": "Your blog exceeds your plan’s character limit"
     },
     "button": {
       "converting": "Converting...",
@@ -326,34 +346,35 @@
     "validation": {
       "dailyLimitReached": "Daily limit reached",
       "selectPlatform": "Select at least one platform",
-      "lengthExceeded": "Blog content exceeds limit",
+      "lengthExceeded": "Blog content too long",
       "pasteContent": "Paste blog content to continue"
     },
     "loading": {
-      "title": "Converting your blog post...",
-      "description": "This may take a few moments"
+      "title": "Analyzing your blog...",
+      "description": "Creating platform-optimized content"
     },
     "empty": {
       "title": "Ready to convert?",
-      "description": "Paste your blog content to generate platform-optimized social media posts"
+      "description": "Paste your blog content to generate social-ready posts"
     },
     "toast": {
       "dailyLimit": "Daily limit reached",
       "platformLimit": "You can select up to {{max}} platforms",
-      "selectPlatform": "Please select at least one platform",
+      "selectPlatform": "Select at least one platform",
       "lengthExceeded": "Blog content exceeds your plan limit",
       "minLength": "Blog content must be at least 10 characters",
-      "maxLength": "Blog content must be less than 50,000 characters",
-      "failed": "Failed to generate content. Please try again.",
-      "successSingle": "Generated content for {{count}} platform!",
-      "successMultiple": "Generated content for {{count}} platforms!",
-      "error": "An error occurred while generating content"
+      "maxLength": "Blog content must be under 50,000 characters",
+      "failed": "Failed to convert content",
+      "successSingle": "Converted for {{count}} platform!",
+      "successMultiple": "Converted for {{count}} platforms!",
+      "error": "Error during conversion"
     }
   },
+
   "appLayout": {
     "nav": {
       "generate": "Generate",
-      "blogToSns": "Blog to SNS"
+      "blogToSns": "Blog → SNS"
     },
     "usage": {
       "today": "{{count}} today"
@@ -366,21 +387,24 @@
       "signOut": "Sign Out"
     }
   },
+
   "platformSelector": {
     "label": "Select Platforms",
     "selected": "{{count}}/{{total}} selected"
   },
+
   "resultCards": {
-    "title": "Your Generated Content",
-    "description": "Content optimized for {{count}} platform",
-    "descriptionPlural": "Content optimized for {{count}} platforms",
-    "noContent": "No content generated",
+    "title": "Generated Content",
+    "description": "Optimized for {{count}} platform",
+    "descriptionPlural": "Optimized for {{count}} platforms",
+    "noContent": "No content generated yet",
     "chars": "chars",
     "copyToClipboard": "Copy to Clipboard",
-    "copied": "Copied {{platform}} content to clipboard!"
+    "copied": "Copied {{platform}} content!"
   },
+
   "common": {
-    "quotaExceeded": "You reached your plan limits.",
+    "quotaExceeded": "You've reached your plan limits.",
     "validationError": "Please check your input and try again.",
     "providerError": "Failed to generate content. Please try again."
   }
